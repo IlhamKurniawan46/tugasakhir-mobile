@@ -20,10 +20,30 @@ class LocalDb {
         path,
         version: AppConstants.localDbVersion,
         onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
       );
     } catch (e) {
       print('[HoloDex Error] Gagal inisialisasi SQLite: $e');
       rethrow;
+    }
+  }
+
+  static Future<void> _onUpgrade(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2) {
+      try {
+        await db.execute('ALTER TABLE cards ADD COLUMN price_ref_usd REAL');
+        await db.execute('ALTER TABLE cards ADD COLUMN price_source TEXT');
+        await db.execute('ALTER TABLE cards ADD COLUMN has_price INTEGER DEFAULT 0');
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_cards_price_ref_usd ON cards(price_ref_usd DESC)',
+        );
+      } catch (e) {
+        print('[HoloDex Error] Gagal migrasi SQLite v2: $e');
+      }
     }
   }
 
@@ -52,10 +72,14 @@ class LocalDb {
         price_idr REAL,
         price_usd REAL,
         price_eur REAL,
+        price_ref_usd REAL,
+        price_source TEXT,
+        has_price INTEGER DEFAULT 0,
         last_synced INTEGER
       )
     ''');
     batch.execute('CREATE INDEX idx_cards_price_idr ON cards(price_idr DESC)');
+    batch.execute('CREATE INDEX idx_cards_price_ref_usd ON cards(price_ref_usd DESC)');
     batch.execute('CREATE INDEX idx_cards_set ON cards(set_id)');
 
     // 3. Sesi user aktif
