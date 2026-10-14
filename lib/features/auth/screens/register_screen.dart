@@ -40,7 +40,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
-    if (ok && mounted) context.go('/home');
+    if (ok && mounted) context.go('/dex');
   }
 
   @override

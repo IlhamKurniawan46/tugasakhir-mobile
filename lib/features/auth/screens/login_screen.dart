@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/theme.dart';
+import '../../../core/services/biometric_service.dart';
+import '../../../core/services/session_service.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_widgets.dart';
 
@@ -16,6 +19,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+
+  bool _canUseBiometric = false;
+  String? _savedUsername;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometricAvailability();
+  }
+
+  Future<void> _checkBiometricAvailability() async {
+    final available = await BiometricService.isBiometricAvailable();
+    final savedUsername = await SessionService.getSavedUsername();
+    if (mounted) {
+      setState(() {
+        _canUseBiometric = available && (savedUsername != null);
+        _savedUsername = savedUsername;
+        if (savedUsername != null && _usernameCtrl.text.isEmpty) {
+          _usernameCtrl.text = savedUsername;
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -32,7 +58,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           username: _usernameCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
-    if (ok && mounted) context.go('/home');
+    if (ok && mounted) context.go('/dex');
+  }
+
+  Future<void> _submitBiometric() async {
+    final ok = await ref.read(authProvider.notifier).loginWithBiometrics();
+    if (ok && mounted) context.go('/dex');
   }
 
   @override
@@ -84,6 +115,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           isLoading: auth.isLoading,
           onPressed: _submit,
         ),
+        if (_canUseBiometric) ...[
+          const SizedBox(height: 14),
+          OutlinedButton.icon(
+            onPressed: auth.isLoading ? null : _submitBiometric,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              foregroundColor: AppColors.goldSoft,
+              side: const BorderSide(color: AppColors.outlineVariant),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+              ),
+            ),
+            icon: const Icon(Icons.fingerprint, color: AppColors.gold),
+            label: Text(
+              _savedUsername != null
+                  ? 'Masuk sebagai @$_savedUsername (Sidik Jari)'
+                  : 'Masuk dengan Sidik Jari',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

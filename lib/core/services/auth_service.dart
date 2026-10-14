@@ -174,4 +174,58 @@ class AuthService {
       debugPrint('[HoloDex Error] Gagal cache user ke SQLite: $e');
     }
   }
+
+  /// Ambil user berdasarkan ID dari SQLite lokal.
+  static Future<UserModel?> getUserById(String userId) async {
+    try {
+      final db = await LocalDb.instance;
+      final rows = await db.query(
+        'users',
+        where: 'id = ?',
+        whereArgs: [userId],
+        limit: 1,
+      );
+      if (rows.isNotEmpty) {
+        return UserModel.fromMap(rows.first);
+      }
+    } catch (e) {
+      debugPrint('[HoloDex Error] Gagal membaca user dari SQLite: $e');
+    }
+    return null;
+  }
+
+  /// Ambil user lokal berdasarkan username (untuk prefill atau login cepat sidik jari).
+  static Future<UserModel?> getUserByUsername(String username) async {
+    try {
+      final db = await LocalDb.instance;
+      final rows = await db.query(
+        'users',
+        where: 'lower(username) = ?',
+        whereArgs: [username.toLowerCase().trim()],
+        limit: 1,
+      );
+      if (rows.isNotEmpty) {
+        return UserModel.fromMap(rows.first);
+      }
+    } catch (e) {
+      debugPrint('[HoloDex Error] Gagal membaca user by username dari SQLite: $e');
+    }
+    return null;
+  }
+
+  /// Perbarui preferensi login sidik jari di SQLite lokal.
+  static Future<void> updateFingerprint(String userId, bool enabled) async {
+    try {
+      final db = await LocalDb.instance;
+      await db.update(
+        'users',
+        {'fingerprint_enabled': enabled ? 1 : 0},
+        where: 'id = ?',
+        whereArgs: [userId],
+      );
+    } catch (e) {
+      debugPrint('[HoloDex Error] Gagal update fingerprint di SQLite: $e');
+    }
+  }
 }
+

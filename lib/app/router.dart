@@ -1,12 +1,22 @@
 import 'package:go_router/go_router.dart';
 
-import '../features/auth/screens/home_placeholder_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
+import '../features/auth/screens/splash_screen.dart';
+import '../features/dex/screens/dex_screen.dart';
+import '../features/marketplace/screens/marketplace_screen.dart';
+import '../features/profile/screens/profile_screen.dart';
+import '../features/saran_kesan/screens/saran_kesan_screen.dart';
+import '../shared/widgets/bottom_nav_shell.dart';
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/login',
+  initialLocation: '/splash',
   routes: [
+    GoRoute(
+      path: '/splash',
+      name: 'splash',
+      builder: (context, state) => const SplashScreen(),
+    ),
     GoRoute(
       path: '/login',
       name: 'login',
@@ -17,10 +27,58 @@ final GoRouter appRouter = GoRouter(
       name: 'register',
       builder: (context, state) => const RegisterScreen(),
     ),
+    // Shell 5 tab (Dex, Pasar, Profil, Saran & Logout)
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) {
+        return BottomNavShell(navigationShell: navigationShell);
+      },
+      branches: [
+        // Tab 0: Dex
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/dex',
+              name: 'dex',
+              builder: (context, state) => const DexScreen(),
+            ),
+          ],
+        ),
+        // Tab 1: Pasar (Marketplace)
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/marketplace',
+              name: 'marketplace',
+              builder: (context, state) => const MarketplaceScreen(),
+            ),
+          ],
+        ),
+        // Tab 2: Profil
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/profile',
+              name: 'profile',
+              builder: (context, state) => const ProfileScreen(),
+            ),
+          ],
+        ),
+        // Tab 3: Saran & Kesan
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/saran-kesan',
+              name: 'saran-kesan',
+              builder: (context, state) => const SaranKesanScreen(),
+            ),
+          ],
+        ),
+      ],
+    ),
+    // Backward compatibility untuk route /home
     GoRoute(
       path: '/home',
-      name: 'home',
-      builder: (context, state) => const HomePlaceholderScreen(),
+      redirect: (context, state) => '/dex',
     ),
   ],
 );

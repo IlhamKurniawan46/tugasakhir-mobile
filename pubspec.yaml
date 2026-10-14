@@ -43,6 +43,8 @@ dependencies:
   flutter_dotenv: ^6.0.1
   pointycastle: ^4.0.0
   google_fonts: ^9.0.0
+  flutter_secure_storage: ^11.2.0
+  local_auth: ^3.0.2
 
 dev_dependencies:
   flutter_test:

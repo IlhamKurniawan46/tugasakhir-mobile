@@ -17,6 +17,25 @@ class UserModel {
     this.createdAt,
   });
 
+  UserModel copyWith({
+    String? id,
+    String? username,
+    String? email,
+    String? photoUrl,
+    double? balanceIdr,
+    bool? fingerprintEnabled,
+    DateTime? createdAt,
+  }) =>
+      UserModel(
+        id: id ?? this.id,
+        username: username ?? this.username,
+        email: email ?? this.email,
+        photoUrl: photoUrl ?? this.photoUrl,
+        balanceIdr: balanceIdr ?? this.balanceIdr,
+        fingerprintEnabled: fingerprintEnabled ?? this.fingerprintEnabled,
+        createdAt: createdAt ?? this.createdAt,
+      );
+
   /// Dari respons Supabase (RPC register_user / get_login_credentials).
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
         id: json['id'] as String,
