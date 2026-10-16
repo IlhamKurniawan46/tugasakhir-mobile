@@ -4,6 +4,7 @@ import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../features/dex/screens/dex_screen.dart';
+import '../features/dex/screens/search_screen.dart';
 import '../features/marketplace/screens/marketplace_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/saran_kesan/screens/saran_kesan_screen.dart';
@@ -40,6 +41,13 @@ final GoRouter appRouter = GoRouter(
               path: '/dex',
               name: 'dex',
               builder: (context, state) => const DexScreen(),
+              routes: [
+                GoRoute(
+                  path: 'search',
+                  name: 'search',
+                  builder: (context, state) => const SearchScreen(),
+                ),
+              ],
             ),
           ],
         ),

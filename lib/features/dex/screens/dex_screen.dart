@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../providers/dex_provider.dart';
@@ -57,6 +58,13 @@ class _DexScreenState extends ConsumerState<DexScreen> {
           ],
         ),
         actions: [
+          // Tombol Pencarian & Filter
+          IconButton(
+            icon: const Icon(Icons.search, color: AppColors.gold),
+            tooltip: 'Cari & Filter',
+            onPressed: () => context.push('/dex/search'),
+          ),
+
           // Tombol Toggle Sort: Termahal <-> Termurah
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -92,6 +100,40 @@ class _DexScreenState extends ConsumerState<DexScreen> {
       ),
       body: Column(
         children: [
+          // Bar Pencarian & Filter Cepat
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: InkWell(
+              onTap: () => context.push('/dex/search'),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.surfaceHigh),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.search, color: AppColors.outline, size: 20),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Cari nama kartu, set, atau kelangkaan...',
+                        style: TextStyle(
+                          color: AppColors.outline,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.tune, color: AppColors.gold, size: 18),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
           // Banner Status Offline (jika Supabase gagal dijangkau)
           if (dexState.isOffline)
             Container(
