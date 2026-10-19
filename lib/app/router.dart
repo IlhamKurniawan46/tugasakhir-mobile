@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/splash_screen.dart';
+import '../core/models/card_model.dart';
+import '../features/dex/screens/card_detail_screen.dart';
 import '../features/dex/screens/dex_screen.dart';
 import '../features/dex/screens/search_screen.dart';
 import '../features/marketplace/screens/marketplace_screen.dart';
@@ -46,6 +48,18 @@ final GoRouter appRouter = GoRouter(
                   path: 'search',
                   name: 'search',
                   builder: (context, state) => const SearchScreen(),
+                ),
+                GoRoute(
+                  path: 'card/:id',
+                  name: 'card-detail',
+                  builder: (context, state) {
+                    final cardId = state.pathParameters['id'] ?? '';
+                    final initialCard = state.extra as CardModel?;
+                    return CardDetailScreen(
+                      cardId: cardId,
+                      initialCard: initialCard,
+                    );
+                  },
                 ),
               ],
             ),

@@ -240,12 +240,7 @@ class _DexScreenState extends ConsumerState<DexScreen> {
           return CardTile(
             card: card,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${card.name} (${card.rarity ?? 'Regular'})'),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
+              context.push('/dex/card/${card.id}', extra: card);
             },
           );
         },

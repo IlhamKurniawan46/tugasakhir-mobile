@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../providers/search_provider.dart';
@@ -312,13 +313,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         return CardTile(
           card: card,
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Kartu ${card.name} (${card.localId ?? card.id})'),
-                duration: const Duration(milliseconds: 1200),
-                backgroundColor: AppColors.surfaceHighest,
-              ),
-            );
+            context.push('/dex/card/${card.id}', extra: card);
           },
         );
       },

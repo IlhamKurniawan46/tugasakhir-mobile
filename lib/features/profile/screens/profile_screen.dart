@@ -295,7 +295,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Fitur Koleksi akan aktif pada Sesi 9.'),
+                        content: Text('Coming Soon'),
                       ),
                     );
                   },
@@ -309,7 +309,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Fitur Watchlist akan aktif pada Sesi 9.'),
+                        content: Text('Coming Soon'),
                       ),
                     );
                   },
@@ -350,18 +350,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 24),
 
           // Tombol Keluar
-          OutlinedButton.icon(
-            onPressed: _confirmLogout,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              foregroundColor: AppColors.error,
-              side: const BorderSide(color: AppColors.error),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _confirmLogout,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(64, 48),
+                foregroundColor: AppColors.error,
+                side: const BorderSide(color: AppColors.error),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                ),
               ),
+              icon: const Icon(Icons.logout),
+              label: const Text('Keluar dari Akun'),
             ),
-            icon: const Icon(Icons.logout),
-            label: const Text('Keluar dari Akun'),
           ),
         ],
       ),

@@ -109,7 +109,7 @@ class AppTheme {
           foregroundColor: AppColors.onGold,
           disabledBackgroundColor: AppColors.gold.withValues(alpha: 0.4),
           disabledForegroundColor: AppColors.onGold.withValues(alpha: 0.7),
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(64, 52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusMd),
           ),
@@ -128,7 +128,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.onSurface,
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size(64, 48),
           side: const BorderSide(color: AppColors.surfaceHigh),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusMd),

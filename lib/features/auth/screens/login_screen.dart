@@ -117,22 +117,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         if (_canUseBiometric) ...[
           const SizedBox(height: 14),
-          OutlinedButton.icon(
-            onPressed: auth.isLoading ? null : _submitBiometric,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(50),
-              foregroundColor: AppColors.goldSoft,
-              side: const BorderSide(color: AppColors.outlineVariant),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: auth.isLoading ? null : _submitBiometric,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(64, 50),
+                foregroundColor: AppColors.goldSoft,
+                side: const BorderSide(color: AppColors.outlineVariant),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                ),
               ),
-            ),
-            icon: const Icon(Icons.fingerprint, color: AppColors.gold),
-            label: Text(
-              _savedUsername != null
-                  ? 'Masuk sebagai @$_savedUsername (Sidik Jari)'
-                  : 'Masuk dengan Sidik Jari',
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              icon: const Icon(Icons.fingerprint, color: AppColors.gold),
+              label: Text(
+                _savedUsername != null
+                    ? 'Masuk sebagai @$_savedUsername (Sidik Jari)'
+                    : 'Masuk dengan Sidik Jari',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],

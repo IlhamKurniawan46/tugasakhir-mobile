@@ -211,18 +211,21 @@ class _SaranKesanScreenState extends ConsumerState<SaranKesanScreen> {
                   const SizedBox(height: 28),
 
                   // Tombol Kirim
-                  FilledButton.icon(
-                    onPressed: _submit,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _submit,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(64, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                        ),
                       ),
-                    ),
-                    icon: Icon(_submitted ? Icons.check : Icons.send),
-                    label: Text(
-                      _submitted ? 'Kirim Ulang' : 'Kirim Umpan Balik',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      icon: Icon(_submitted ? Icons.check : Icons.send),
+                      label: Text(
+                        _submitted ? 'Kirim Ulang' : 'Kirim Umpan Balik',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ),
                 ],

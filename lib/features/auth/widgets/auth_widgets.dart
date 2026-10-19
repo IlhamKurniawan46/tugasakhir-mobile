@@ -173,25 +173,28 @@ class AuthSubmitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton(
-      onPressed: isLoading ? null : onPressed,
-      child: isLoading
-          ? Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.onGold,
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        onPressed: isLoading ? null : onPressed,
+        child: isLoading
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.onGold,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Text(loadingLabel),
-              ],
-            )
-          : Text(label),
+                  const SizedBox(width: 12),
+                  Text(loadingLabel),
+                ],
+              )
+            : Text(label),
+      ),
     );
   }
 }
