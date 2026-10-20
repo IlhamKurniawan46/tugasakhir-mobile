@@ -16,11 +16,14 @@ class MarketplaceScreen extends ConsumerWidget {
           children: [
             const Icon(Icons.storefront, color: AppColors.gold, size: 24),
             const SizedBox(width: 8),
-            Text(
-              'Pasar HoloDex',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.gold,
+            Flexible(
+              child: Text(
+                'Pasar HoloDex',
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.gold,
+                ),
               ),
             ),
           ],

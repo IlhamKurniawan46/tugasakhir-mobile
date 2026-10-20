@@ -114,9 +114,9 @@ CREATE TABLE IF NOT EXISTS release_events (
 );
 
 INSERT INTO release_events (title, event_type, event_date, description) VALUES
-  ('Scarlet & Violet Base Set', 'set_release', '2023-03-31T00:00:00Z', 'Rilis SV01'),
-  ('Temporal Forces', 'set_release', '2024-03-22T00:00:00Z', 'Rilis SV05'),
-  ('HoloDex Demo Day', 'custom', '2026-11-01T09:00:00Z', 'Presentasi tugas akhir')
+  ('30th Celebration Battle Deck (Espeon & Umbreon)', 'set_release', '2026-10-30T00:00:00Z', 'Rilis produk resmi. Tanggal dapat berubah, cek sumber resmi.'),
+  ('30th Celebration Ultra-Premium Collection', 'set_release', '2026-11-06T00:00:00Z', 'Rilis produk resmi. Tanggal dapat berubah, cek sumber resmi.'),
+  ('Turnamen Daring HoloDex Cup', 'tournament', '2026-11-15T08:00:00Z', 'Event fiktif HoloDex.')
 ON CONFLICT DO NOTHING;
 
 -- ============================================================

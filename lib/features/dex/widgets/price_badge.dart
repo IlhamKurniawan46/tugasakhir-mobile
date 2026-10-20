@@ -63,12 +63,16 @@ class PriceBadge extends ConsumerWidget {
             color: AppColors.gold,
           ),
           const SizedBox(width: 4),
-          Text(
-            displayText,
-            style: textTheme.labelSmall?.copyWith(
-              color: AppColors.gold,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.2,
+          Flexible(
+            child: Text(
+              displayText,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelSmall?.copyWith(
+                color: AppColors.gold,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+              ),
             ),
           ),
         ],

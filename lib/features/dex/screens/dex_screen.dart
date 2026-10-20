@@ -37,6 +37,142 @@ class _DexScreenState extends ConsumerState<DexScreen> {
     }
   }
 
+  void _showSortFilterBottomSheet(BuildContext context) {
+    final currentOrder = ref.read(dexProvider).sortOrder;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surfaceLow,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Sheet
+                Row(
+                  children: [
+                    const Icon(Icons.sort, color: AppColors.gold, size: 22),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Pengurutan & Filter Katalog',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppColors.outline),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Pilih urutan tampilan kartu di katalog Dex:',
+                  style: TextStyle(fontSize: 12, color: AppColors.outline),
+                ),
+                const SizedBox(height: 16),
+
+                // Pilihan Sort: Termahal, Termurah, Nama
+                ...SortOrder.values.map((order) {
+                  final isSelected = currentOrder == order;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.gold.withValues(alpha: 0.12)
+                          : AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected ? AppColors.gold : AppColors.surfaceHigh,
+                        width: isSelected ? 1.4 : 1,
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      child: ListTile(
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                        leading: Icon(
+                          order == SortOrder.expensiveFirst
+                              ? Icons.trending_up
+                              : (order == SortOrder.cheapestFirst
+                                  ? Icons.trending_down
+                                  : Icons.sort_by_alpha),
+                          color: isSelected ? AppColors.gold : AppColors.outline,
+                          size: 22,
+                        ),
+                        title: Text(
+                          order.label,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected ? AppColors.gold : AppColors.onSurface,
+                          ),
+                        ),
+                        subtitle: Text(
+                          order.description,
+                          style: const TextStyle(fontSize: 11, color: AppColors.outline),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_circle,
+                                color: AppColors.gold, size: 20)
+                            : const Icon(Icons.radio_button_unchecked,
+                                color: AppColors.surfaceHighest, size: 20),
+                        onTap: () {
+                          ref.read(dexProvider.notifier).setSortOrder(order);
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 12),
+
+                // Tombol Buka Filter Lanjutan di Search
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.surfaceHigh),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    icon: const Icon(Icons.tune, color: AppColors.gold, size: 18),
+                    label: const Text(
+                      'Buka Filter Lanjutan (Set, Rarity, Harga)',
+                      style: TextStyle(
+                        color: AppColors.goldSoft,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      context.push('/dex/search');
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dexState = ref.watch(dexProvider);
@@ -46,57 +182,29 @@ class _DexScreenState extends ConsumerState<DexScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.diamond, color: AppColors.gold, size: 24),
             const SizedBox(width: 8),
-            Text(
-              'HoloDex',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: AppColors.gold,
-                letterSpacing: -0.4,
+            Flexible(
+              child: Text(
+                'HoloDex',
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.gold,
+                  letterSpacing: -0.4,
+                ),
               ),
             ),
           ],
         ),
         actions: [
-          // Tombol Pencarian & Filter
+          // SATU aksi: Ikon Kalender Event
           IconButton(
-            icon: const Icon(Icons.search, color: AppColors.gold),
-            tooltip: 'Cari & Filter',
-            onPressed: () => context.push('/dex/search'),
-          ),
-
-          // Tombol Toggle Sort: Termahal <-> Termurah
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: ActionChip(
-              avatar: Icon(
-                dexState.sortOrder == SortOrder.expensiveFirst
-                    ? Icons.arrow_downward
-                    : Icons.arrow_upward,
-                size: 14,
-                color: AppColors.gold,
-              ),
-              label: Text(
-                dexState.sortOrder == SortOrder.expensiveFirst
-                    ? 'Termahal'
-                    : 'Termurah',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.goldSoft,
-                ),
-              ),
-              backgroundColor: AppColors.surface,
-              side: const BorderSide(color: AppColors.surfaceHigh),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              onPressed: () {
-                ref.read(dexProvider.notifier).toggleSortOrder();
-              },
-            ),
+            icon: const Icon(Icons.calendar_month, color: AppColors.gold),
+            tooltip: 'Kalender Event',
+            onPressed: () => context.push('/calendar'),
           ),
         ],
       ),
@@ -105,33 +213,72 @@ class _DexScreenState extends ConsumerState<DexScreen> {
           // Bar Pencarian & Filter Cepat
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: InkWell(
-              onTap: () => context.push('/dex/search'),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.surfaceHigh),
-                ),
-                child: Row(
-                  children: const [
-                    Icon(Icons.search, color: AppColors.outline, size: 20),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Cari nama kartu, set, atau kelangkaan...',
-                        style: TextStyle(
-                          color: AppColors.outline,
-                          fontSize: 13,
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.surfaceHigh),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => context.push('/dex/search'),
+                      borderRadius: const BorderRadius.horizontal(
+                        left: Radius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.search,
+                                color: AppColors.outline, size: 20),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Cari nama kartu, set, atau kelangkaan...',
+                                style: TextStyle(
+                                  color: AppColors.outline,
+                                  fontSize: 13,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    Icon(Icons.tune, color: AppColors.gold, size: 18),
-                  ],
-                ),
+                  ),
+                  // Tombol Tune Filter / Pengurutan
+                  InkWell(
+                    onTap: () => _showSortFilterBottomSheet(context),
+                    borderRadius: const BorderRadius.horizontal(
+                      right: Radius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            height: 16,
+                            width: 1,
+                            color: AppColors.surfaceHigh,
+                          ),
+                          const SizedBox(width: 10),
+                          const Icon(Icons.tune,
+                              color: AppColors.gold, size: 18),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -139,65 +286,83 @@ class _DexScreenState extends ConsumerState<DexScreen> {
           // Selector Mata Uang Global (IDR | USD | EUR) & Tombol Konverter
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
-            child: Row(
-              children: [
-                ...AppCurrency.values.map((currency) {
-                  final isSelected = selectedCurrency == currency;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: ChoiceChip(
-                      label: Text(currency.code),
-                      selected: isSelected,
-                      onSelected: (_) {
-                        ref.read(currencyProvider.notifier).setCurrency(currency);
-                      },
-                      selectedColor: AppColors.gold,
-                      backgroundColor: AppColors.surface,
-                      labelStyle: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: isSelected ? AppColors.onGold : AppColors.onSurfaceVariant,
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                      visualDensity: VisualDensity.compact,
-                      side: BorderSide(
-                        color: isSelected ? AppColors.gold : AppColors.surfaceHigh,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  );
-                }),
-                const Spacer(),
-                InkWell(
-                  onTap: () => context.push('/converter'),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.surfaceHigh),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.currency_exchange, size: 13, color: AppColors.gold),
-                        SizedBox(width: 5),
-                        Text(
-                          'Konverter',
-                          style: TextStyle(
+            child: SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: AppCurrency.values.map((currency) {
+                      final isSelected = selectedCurrency == currency;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: ChoiceChip(
+                          label: Text(currency.code),
+                          selected: isSelected,
+                          showCheckmark: false,
+                          onSelected: (_) {
+                            ref
+                                .read(currencyProvider.notifier)
+                                .setCurrency(currency);
+                          },
+                          selectedColor: AppColors.gold,
+                          backgroundColor: AppColors.surface,
+                          labelStyle: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.goldSoft,
+                            color: isSelected
+                                ? AppColors.onGold
+                                : AppColors.onSurfaceVariant,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 0),
+                          visualDensity: VisualDensity.compact,
+                          side: BorderSide(
+                            color: isSelected
+                                ? AppColors.gold
+                                : AppColors.surfaceHigh,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                      ],
+                      );
+                    }).toList(),
+                  ),
+                  InkWell(
+                    onTap: () => context.push('/converter'),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.surfaceHigh),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.currency_exchange,
+                              size: 13, color: AppColors.gold),
+                          SizedBox(width: 5),
+                          Text(
+                            'Konverter',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.goldSoft,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 

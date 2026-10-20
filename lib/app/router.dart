@@ -4,6 +4,7 @@ import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../core/models/card_model.dart';
+import '../features/converter/screens/calendar_screen.dart';
 import '../features/converter/screens/converter_screen.dart';
 import '../features/dex/screens/card_detail_screen.dart';
 import '../features/dex/screens/dex_screen.dart';
@@ -42,6 +43,11 @@ final GoRouter appRouter = GoRouter(
           cardName: extra?['cardName'] as String?,
         );
       },
+    ),
+    GoRoute(
+      path: '/calendar',
+      name: 'calendar',
+      builder: (context, state) => const CalendarScreen(),
     ),
     // Shell 5 tab (Dex, Pasar, Profil, Saran & Logout)
     StatefulShellRoute.indexedStack(

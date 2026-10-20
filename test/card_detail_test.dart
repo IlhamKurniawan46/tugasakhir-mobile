@@ -10,7 +10,7 @@ import 'package:holodex/features/dex/screens/card_detail_screen.dart';
 import 'package:holodex/features/dex/widgets/holo_card_widget.dart';
 
 void main() {
-  group('Sesi 7 — Card Detail & Holo Effect Unit Tests', () {
+  group('Card Detail & Holo Effect Unit Tests', () {
     test('HoloCardWidget intensity corresponds to card rarity', () {
       expect(HoloCardWidget.intensityForRarity('Common'), equals(0.0));
       expect(HoloCardWidget.intensityForRarity('Uncommon'), equals(0.0));

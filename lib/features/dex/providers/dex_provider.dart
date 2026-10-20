@@ -8,8 +8,13 @@ import '../../../core/models/card_model.dart';
 import '../../../core/services/currency_service.dart';
 
 enum SortOrder {
-  expensiveFirst, // Termahal -> Termurah (DESC)
-  cheapestFirst, // Termurah -> Termahal (ASC)
+  expensiveFirst('Termahal', 'Harga tertinggi ke terendah'),
+  cheapestFirst('Termurah', 'Harga terendah ke tertinggi'),
+  nameAsc('Nama (A-Z)', 'Urutkan alfabetis nama kartu');
+
+  final String label;
+  final String description;
+  const SortOrder(this.label, this.description);
 }
 
 class DexState {
@@ -79,18 +84,22 @@ class DexNotifier extends StateNotifier<DexState> {
     await CurrencyService.initRates();
 
     final offset = targetPage * pageSize;
-    final isAscending = state.sortOrder == SortOrder.cheapestFirst;
 
     try {
       // 1. Coba ambil dari Supabase
       if (SupabaseService.isInitialized) {
         final client = SupabaseService.client;
-        final response = await client
-            .from('cards')
-            .select()
-            .eq('has_price', true)
-            .order('price_ref_usd', ascending: isAscending)
-            .range(offset, offset + pageSize - 1);
+        final filterQuery = client.from('cards').select().eq('has_price', true);
+
+        final orderQuery = switch (state.sortOrder) {
+          SortOrder.nameAsc => filterQuery.order('name', ascending: true),
+          SortOrder.cheapestFirst =>
+            filterQuery.order('price_ref_usd', ascending: true),
+          SortOrder.expensiveFirst =>
+            filterQuery.order('price_ref_usd', ascending: false),
+        };
+
+        final response = await orderQuery.range(offset, offset + pageSize - 1);
 
         final List<CardModel> fetchedCards = (response as List)
             .map((item) => CardModel.fromJson(Map<String, dynamic>.from(item)))
@@ -120,9 +129,18 @@ class DexNotifier extends StateNotifier<DexState> {
     // 2. Fallback: Ambil dari SQLite Cache
     try {
       final db = await LocalDb.instance;
-      final orderBy = isAscending
-          ? 'price_ref_usd ASC'
-          : 'price_ref_usd DESC';
+      final String orderBy;
+      switch (state.sortOrder) {
+        case SortOrder.nameAsc:
+          orderBy = 'name ASC';
+          break;
+        case SortOrder.cheapestFirst:
+          orderBy = 'price_ref_usd ASC';
+          break;
+        case SortOrder.expensiveFirst:
+          orderBy = 'price_ref_usd DESC';
+          break;
+      }
 
       final rows = await db.query(
         'cards',
@@ -155,6 +173,13 @@ class DexNotifier extends StateNotifier<DexState> {
         errorMessage: 'Gagal memuat katalog kartu.',
       );
     }
+  }
+
+  /// Ubah urutan kartu ke opsi tertentu (Termahal, Termurah, Nama)
+  void setSortOrder(SortOrder newOrder) {
+    if (state.sortOrder == newOrder) return;
+    state = state.copyWith(sortOrder: newOrder);
+    fetchCards(refresh: true);
   }
 
   /// Ganti urutan harga termahal <-> termurah
