@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
+import '../../../shared/providers/currency_provider.dart';
 import '../providers/dex_provider.dart';
 import '../widgets/card_tile.dart';
 
@@ -39,6 +40,7 @@ class _DexScreenState extends ConsumerState<DexScreen> {
   @override
   Widget build(BuildContext context) {
     final dexState = ref.watch(dexProvider);
+    final selectedCurrency = ref.watch(currencyProvider);
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -131,6 +133,71 @@ class _DexScreenState extends ConsumerState<DexScreen> {
                   ],
                 ),
               ),
+            ),
+          ),
+
+          // Selector Mata Uang Global (IDR | USD | EUR) & Tombol Konverter
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+            child: Row(
+              children: [
+                ...AppCurrency.values.map((currency) {
+                  final isSelected = selectedCurrency == currency;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      label: Text(currency.code),
+                      selected: isSelected,
+                      onSelected: (_) {
+                        ref.read(currencyProvider.notifier).setCurrency(currency);
+                      },
+                      selectedColor: AppColors.gold,
+                      backgroundColor: AppColors.surface,
+                      labelStyle: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? AppColors.onGold : AppColors.onSurfaceVariant,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                      visualDensity: VisualDensity.compact,
+                      side: BorderSide(
+                        color: isSelected ? AppColors.gold : AppColors.surfaceHigh,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  );
+                }),
+                const Spacer(),
+                InkWell(
+                  onTap: () => context.push('/converter'),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.surfaceHigh),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.currency_exchange, size: 13, color: AppColors.gold),
+                        SizedBox(width: 5),
+                        Text(
+                          'Konverter',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.goldSoft,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 

@@ -1,21 +1,45 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme.dart';
-import '../../../core/utils/price_formatter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Badge penunjuk harga dalam Rupiah dengan aksen emas (gold) HoloDex.
-class PriceBadge extends StatelessWidget {
-  final double priceIdr;
+import '../../../app/theme.dart';
+import '../../../core/models/card_model.dart';
+import '../../../core/utils/price_formatter.dart';
+import '../../../shared/providers/currency_provider.dart';
+
+/// Badge penunjuk harga dinamis sesuai preferensi mata uang (IDR/USD/EUR) HoloDex.
+class PriceBadge extends ConsumerWidget {
+  final CardModel? card;
+  final double? price;
+  final String? currency;
+  final double? priceIdr;
   final bool compact;
 
   const PriceBadge({
     super.key,
-    required this.priceIdr,
+    this.card,
+    this.price,
+    this.currency,
+    this.priceIdr,
     this.compact = false,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedCurrency = ref.watch(currencyProvider);
+    // Ikuti juga perubahan nilai kurs live jika terjadi pembaruan
+    ref.watch(currencyRatesProvider);
     final textTheme = Theme.of(context).textTheme;
+
+    String displayText;
+    if (card != null) {
+      displayText = CardPriceCalculator.formatCardPrice(card!, selectedCurrency);
+    } else if (price != null) {
+      displayText = PriceFormatter.format(price, currency ?? selectedCurrency.code);
+    } else if (priceIdr != null) {
+      displayText = formatIdr(priceIdr);
+    } else {
+      displayText = '-';
+    }
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -40,7 +64,7 @@ class PriceBadge extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            formatIdr(priceIdr),
+            displayText,
             style: textTheme.labelSmall?.copyWith(
               color: AppColors.gold,
               fontWeight: FontWeight.w700,

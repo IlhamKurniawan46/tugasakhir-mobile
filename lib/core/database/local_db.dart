@@ -45,6 +45,13 @@ class LocalDb {
         print('[HoloDex Error] Gagal migrasi SQLite v2: $e');
       }
     }
+    if (oldVersion < 3) {
+      try {
+        await db.execute('ALTER TABLE currency_cache ADD COLUMN ecb_date TEXT');
+      } catch (e) {
+        print('[HoloDex Error] Gagal migrasi SQLite v3: $e');
+      }
+    }
   }
 
   static Future<void> _onCreate(Database db, int version) async {
@@ -150,6 +157,7 @@ class LocalDb {
         base TEXT NOT NULL,
         target TEXT NOT NULL,
         rate REAL NOT NULL,
+        ecb_date TEXT,
         updated_at INTEGER NOT NULL,
         PRIMARY KEY(base, target)
       )

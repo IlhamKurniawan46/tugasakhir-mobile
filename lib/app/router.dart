@@ -4,6 +4,7 @@ import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../core/models/card_model.dart';
+import '../features/converter/screens/converter_screen.dart';
 import '../features/dex/screens/card_detail_screen.dart';
 import '../features/dex/screens/dex_screen.dart';
 import '../features/dex/screens/search_screen.dart';
@@ -29,6 +30,18 @@ final GoRouter appRouter = GoRouter(
       path: '/register',
       name: 'register',
       builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: '/converter',
+      name: 'converter',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return ConverterScreen(
+          initialAmount: (extra?['initialAmount'] as num?)?.toDouble(),
+          initialCurrency: extra?['initialCurrency'] as String?,
+          cardName: extra?['cardName'] as String?,
+        );
+      },
     ),
     // Shell 5 tab (Dex, Pasar, Profil, Saran & Logout)
     StatefulShellRoute.indexedStack(

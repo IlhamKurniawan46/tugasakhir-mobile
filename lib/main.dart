@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
 import 'core/database/local_db.dart';
 import 'core/database/supabase_client.dart';
+import 'core/services/currency_service.dart';
 import 'core/utils/env_loader.dart';
 
 void main() async {
@@ -28,7 +29,14 @@ void main() async {
     print('[HoloDex Error] Inisialisasi SupabaseService gagal: $e');
   }
 
-  // 4. Jalankan aplikasi dibungkus ProviderScope (Riverpod)
+  // 4. Inisialisasi kurs mata uang (offline-first via SQLite cache + background refresh)
+  try {
+    await CurrencyService.initRates();
+  } catch (e) {
+    print('[HoloDex Error] Inisialisasi CurrencyService gagal: $e');
+  }
+
+  // 5. Jalankan aplikasi dibungkus ProviderScope (Riverpod)
   runApp(
     const ProviderScope(
       child: HoloDexApp(),

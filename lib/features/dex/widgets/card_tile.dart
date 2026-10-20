@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/card_model.dart';
-import '../../../core/services/currency_service.dart';
 import 'price_badge.dart';
 
 class CardTile extends StatelessWidget {
@@ -19,11 +18,6 @@ class CardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-
-    // Hitung harga dinamis IDR berdasarkan kurs live jika price_ref_usd ada
-    final double displayPrice = card.priceRefUsd != null
-        ? CurrencyService.convertRefUsdToIdr(card.priceRefUsd!)
-        : (card.priceIdr ?? 0);
 
     return InkWell(
       onTap: onTap,
@@ -156,7 +150,7 @@ class CardTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
-                  PriceBadge(priceIdr: displayPrice),
+                  PriceBadge(card: card),
                 ],
               ),
             ),
