@@ -107,6 +107,8 @@ class CollectionNotifier extends StateNotifier<CollectionState> {
     }
   }
 
+  Future<void> refresh() => loadCollection(forceRefresh: true);
+
   void clear() {
     state = const CollectionState();
   }

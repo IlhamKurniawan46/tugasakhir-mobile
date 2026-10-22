@@ -55,6 +55,15 @@ class PriceFormatter {
         return value.toStringAsFixed(2);
     }
   }
+
+  /// Format angka ke Rupiah tanpa desimal, contoh: 100000 -> "Rp100.000".
+  static String formatIdr(num? value) => format(value, 'IDR');
+
+  /// Format angka ke USD dengan 2 desimal, contoh: 24.5 -> "$24.50".
+  static String formatUsd(num? value) => format(value, 'USD');
+
+  /// Format angka ke EUR dengan 2 desimal, contoh: 18.2 -> "€18.20".
+  static String formatEur(num? value) => format(value, 'EUR');
 }
 
 /// Format angka ke Rupiah tanpa desimal, contoh: 100000 -> "Rp100.000".

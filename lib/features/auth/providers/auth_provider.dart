@@ -193,6 +193,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState();
   }
 
+  /// Perbarui saldo user saat ini (misal setelah beli kartu atau top up).
+  void updateUserBalance(double newBalance) {
+    if (state.user != null) {
+      state = state.copyWith(
+        user: state.user!.copyWith(balanceIdr: newBalance),
+      );
+    }
+  }
+
+  /// Sinkronisasi profil user terkini dari SQLite / Supabase.
+  Future<void> refreshProfile() async {
+    final currentUser = state.user;
+    if (currentUser == null) return;
+    try {
+      final user = await AuthService.getUserById(currentUser.id);
+      if (user != null) {
+        state = state.copyWith(user: user);
+      }
+    } catch (_) {}
+  }
+
   void clearError() {
     if (state.status == AuthStatus.error) {
       state = state.copyWith(status: AuthStatus.idle, errorMessage: null);

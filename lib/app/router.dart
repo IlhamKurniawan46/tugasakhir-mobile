@@ -4,12 +4,16 @@ import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../core/models/card_model.dart';
+import '../core/models/listing_model.dart';
 import '../features/converter/screens/calendar_screen.dart';
 import '../features/converter/screens/converter_screen.dart';
 import '../features/dex/screens/card_detail_screen.dart';
 import '../features/dex/screens/dex_screen.dart';
 import '../features/dex/screens/search_screen.dart';
+import '../features/marketplace/screens/create_listing_screen.dart';
+import '../features/marketplace/screens/listing_detail_screen.dart';
 import '../features/marketplace/screens/marketplace_screen.dart';
+import '../features/marketplace/screens/transaction_history_screen.dart';
 import '../features/profile/screens/collection_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/profile/screens/watchlist_screen.dart';
@@ -103,6 +107,33 @@ final GoRouter appRouter = GoRouter(
               path: '/marketplace',
               name: 'marketplace',
               builder: (context, state) => const MarketplaceScreen(),
+              routes: [
+                GoRoute(
+                  path: 'create',
+                  name: 'marketplace-create',
+                  builder: (context, state) {
+                    final card = state.extra as CardModel?;
+                    return CreateListingScreen(preselectedCard: card);
+                  },
+                ),
+                GoRoute(
+                  path: 'history',
+                  name: 'marketplace-history',
+                  builder: (context, state) => const TransactionHistoryScreen(),
+                ),
+                GoRoute(
+                  path: 'listing/:id',
+                  name: 'listing-detail',
+                  builder: (context, state) {
+                    final listingId = state.pathParameters['id'] ?? '';
+                    final initialListing = state.extra as ListingModel?;
+                    return ListingDetailScreen(
+                      listingId: listingId,
+                      initialListing: initialListing,
+                    );
+                  },
+                ),
+              ],
             ),
           ],
         ),
