@@ -15,7 +15,7 @@ import 'package:holodex/features/marketplace/screens/transaction_history_screen.
 
 class FakeMarketplaceNotifier extends MarketplaceNotifier {
   final MarketplaceState initialState;
-  FakeMarketplaceNotifier(Ref ref, this.initialState) : super(ref) {
+  FakeMarketplaceNotifier(super.ref, this.initialState) {
     state = initialState;
   }
 

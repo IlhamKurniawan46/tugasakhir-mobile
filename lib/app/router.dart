@@ -12,6 +12,7 @@ import '../features/dex/screens/dex_screen.dart';
 import '../features/dex/screens/search_screen.dart';
 import '../features/marketplace/screens/create_listing_screen.dart';
 import '../features/marketplace/screens/listing_detail_screen.dart';
+import '../features/marketplace/screens/map_screen.dart';
 import '../features/marketplace/screens/marketplace_screen.dart';
 import '../features/marketplace/screens/transaction_history_screen.dart';
 import '../features/profile/screens/collection_screen.dart';
@@ -120,6 +121,11 @@ final GoRouter appRouter = GoRouter(
                   path: 'history',
                   name: 'marketplace-history',
                   builder: (context, state) => const TransactionHistoryScreen(),
+                ),
+                GoRoute(
+                  path: 'map',
+                  name: 'marketplace-map',
+                  builder: (context, state) => const MapScreen(),
                 ),
                 GoRoute(
                   path: 'listing/:id',

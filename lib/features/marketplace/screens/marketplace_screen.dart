@@ -56,7 +56,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        'Top Up Saldo Simulasi',
+                        'Top Up Saldo Vitrual',
                         style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -66,7 +66,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Fitur demo tugas akhir: Tambahkan saldo virtual untuk berbelanja kartu di pasar tanpa uang sungguhan.',
+                  'Tambahkan saldo untuk berbelanja kartu di marketplace.',
                   style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
                         color: AppColors.onSurfaceVariant,
                       ),
@@ -435,6 +435,19 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                                 const BorderSide(color: AppColors.surfaceHigh),
                           ),
                         ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.surfaceHigh),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.map_outlined, color: AppColors.gold),
+                        tooltip: 'Peta Penjual Terdekat (LBS)',
+                        onPressed: () => context.push('/marketplace/map'),
                       ),
                     ),
                     const SizedBox(width: 8),
