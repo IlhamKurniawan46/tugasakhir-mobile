@@ -38,32 +38,24 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     switch (result) {
       case ToggleResult.added:
         messenger.showSnackBar(
-          SnackBar(
-            content: const Row(
+          const SnackBar(
+            content: Row(
               children: [
                 Icon(Icons.favorite, color: AppColors.pink, size: 20),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Kartu ditambahkan ke Watchlist!',
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
             backgroundColor: AppColors.surfaceHighest,
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'Atur Target',
-              textColor: AppColors.gold,
-              onPressed: () {
-                final card = ref.read(cardDetailProvider(_args)).card;
-                if (card != null) {
-                  _showTargetPriceDialog(card);
-                }
-              },
-            ),
+            duration: Duration(milliseconds: 2000),
+            behavior: SnackBarBehavior.floating,
+            dismissDirection: DismissDirection.horizontal,
           ),
         );
         break;
@@ -282,91 +274,95 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     final card = detailState.card;
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, size: 20),
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: AppColors.surfaceHigh),
-              ),
-            ),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ),
-        title: card == null
-            ? const Text('Detail Kartu')
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    '${card.name} #${card.localId ?? card.id}',
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onSurface,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    (card.setName ?? card.setId ?? 'Pokémon TCG').toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onSurfaceVariant,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ],
-              ),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+      child: Scaffold(
+        appBar: AppBar(
+          leading: Padding(
+            padding: const EdgeInsets.all(8.0),
             child: IconButton(
-              icon: Icon(
-                detailState.inWatchlist ? Icons.favorite : Icons.favorite_border,
-                color: detailState.inWatchlist ? AppColors.pink : AppColors.outline,
-                size: 22,
-              ),
+              icon: const Icon(Icons.arrow_back, size: 20),
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.surface,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: detailState.inWatchlist
-                        ? AppColors.pink.withValues(alpha: 0.5)
-                        : AppColors.surfaceHigh,
-                  ),
+                  side: const BorderSide(color: AppColors.surfaceHigh),
                 ),
               ),
-              tooltip: detailState.inWatchlist
-                  ? 'Hapus dari Watchlist'
-                  : 'Tambah ke Watchlist',
-              onPressed: _handleWatchlistToggle,
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ),
-        ],
-      ),
-      body: detailState.isLoading && card == null
-          ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
-          : card == null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-                      const SizedBox(height: 12),
-                      Text(detailState.errorMessage ?? 'Kartu tidak ditemukan'),
-                    ],
+          title: card == null
+              ? const Text('Detail Kartu')
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${card.name} #${card.localId ?? card.id}',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      (card.setName ?? card.setId ?? 'Pokémon TCG').toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurfaceVariant,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ],
+                ),
+          centerTitle: true,
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: IconButton(
+                icon: Icon(
+                  detailState.inWatchlist ? Icons.favorite : Icons.favorite_border,
+                  color: detailState.inWatchlist ? AppColors.pink : AppColors.outline,
+                  size: 22,
+                ),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: detailState.inWatchlist
+                          ? AppColors.pink.withValues(alpha: 0.5)
+                          : AppColors.surfaceHigh,
+                    ),
                   ),
-                )
-              : _buildCardContent(card, detailState),
+                ),
+                tooltip: detailState.inWatchlist
+                    ? 'Hapus dari Watchlist'
+                    : 'Tambah ke Watchlist',
+                onPressed: _handleWatchlistToggle,
+              ),
+            ),
+          ],
+        ),
+        body: detailState.isLoading && card == null
+            ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
+            : card == null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                        const SizedBox(height: 12),
+                        Text(detailState.errorMessage ?? 'Kartu tidak ditemukan'),
+                      ],
+                    ),
+                  )
+                : _buildCardContent(card, detailState),
+      ),
     );
   }
 

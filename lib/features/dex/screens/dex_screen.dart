@@ -91,7 +91,9 @@ class _DexScreenState extends ConsumerState<DexScreen> {
         ? '$addedCount kartu ditambahkan ke Watchlist${alreadyCount > 0 ? ' ($alreadyCount sudah ada)' : ''}'
         : 'Semua kartu yang dipilih sudah ada di Watchlist';
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
         content: Row(
           children: [
@@ -101,6 +103,7 @@ class _DexScreenState extends ConsumerState<DexScreen> {
           ],
         ),
         backgroundColor: AppColors.surfaceHighest,
+        behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
       ),
     );

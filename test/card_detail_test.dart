@@ -139,19 +139,16 @@ void main() {
                             Expanded(
                               child: Text(
                                 'Kartu ditambahkan ke Watchlist!',
-                                maxLines: 2,
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
                         backgroundColor: AppColors.surfaceHighest,
-                        duration: const Duration(seconds: 4),
-                        action: SnackBarAction(
-                          label: 'Atur Target',
-                          textColor: AppColors.gold,
-                          onPressed: () {},
-                        ),
+                        duration: const Duration(milliseconds: 2000),
+                        behavior: SnackBarBehavior.floating,
+                        dismissDirection: DismissDirection.horizontal,
                       ),
                     );
                   },
@@ -169,7 +166,6 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('Kartu ditambahkan ke Watchlist!'), findsOneWidget);
-      expect(find.text('Atur Target'), findsOneWidget);
     });
   });
 }
