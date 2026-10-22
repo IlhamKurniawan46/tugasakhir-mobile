@@ -8,11 +8,17 @@ import 'price_badge.dart';
 class CardTile extends StatelessWidget {
   final CardModel card;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final bool isSelected;
+  final bool isSelectionMode;
 
   const CardTile({
     super.key,
     required this.card,
     this.onTap,
+    this.onLongPress,
+    this.isSelected = false,
+    this.isSelectionMode = false,
   });
 
   @override
@@ -21,19 +27,25 @@ class CardTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: isSelected
+              ? AppColors.gold.withValues(alpha: 0.12)
+              : AppColors.surface,
           borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           border: Border.all(
-            color: AppColors.surfaceHigh,
-            width: 1,
+            color: isSelected ? AppColors.gold : AppColors.surfaceHigh,
+            width: isSelected ? 2.0 : 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 8,
+              color: isSelected
+                  ? AppColors.gold.withValues(alpha: 0.25)
+                  : Colors.black.withValues(alpha: 0.25),
+              blurRadius: isSelected ? 12 : 8,
               offset: const Offset(0, 4),
             ),
           ],
@@ -124,6 +136,28 @@ class CardTile extends StatelessWidget {
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+
+                          // Indikator Pilihan (Mode Multi-select)
+                          if (isSelectionMode)
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.surfaceLowest,
+                                ),
+                                child: Icon(
+                                  isSelected
+                                      ? Icons.check_circle
+                                      : Icons.radio_button_unchecked,
+                                  color: isSelected
+                                      ? AppColors.gold
+                                      : AppColors.outline.withValues(alpha: 0.8),
+                                  size: 22,
                                 ),
                               ),
                             ),

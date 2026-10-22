@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import '../../../core/database/local_db.dart';
 import '../../../core/database/supabase_client.dart';
 import '../../../core/models/card_model.dart';
-import '../../../core/services/collection_service.dart';
+import '../../../core/services/collection_repository.dart';
 import '../../../core/services/currency_service.dart';
 import '../../../core/services/session_service.dart';
 
@@ -14,6 +14,7 @@ class CardDetailState {
   final String? errorMessage;
   final bool inCollection;
   final bool inWatchlist;
+  final double? alertPriceIdr;
   final bool isBusy;
 
   const CardDetailState({
@@ -22,6 +23,7 @@ class CardDetailState {
     this.errorMessage,
     this.inCollection = false,
     this.inWatchlist = false,
+    this.alertPriceIdr,
     this.isBusy = false,
   });
 
@@ -31,6 +33,7 @@ class CardDetailState {
     String? errorMessage,
     bool? inCollection,
     bool? inWatchlist,
+    double? alertPriceIdr,
     bool? isBusy,
   }) =>
       CardDetailState(
@@ -39,6 +42,7 @@ class CardDetailState {
         errorMessage: errorMessage,
         inCollection: inCollection ?? this.inCollection,
         inWatchlist: inWatchlist ?? this.inWatchlist,
+        alertPriceIdr: alertPriceIdr ?? this.alertPriceIdr,
         isBusy: isBusy ?? this.isBusy,
       );
 }
@@ -107,34 +111,34 @@ class CardDetailNotifier extends StateNotifier<CardDetailState> {
     final userId = await SessionService.getActiveUserId();
     if (userId == null || !mounted) return;
 
-    final results = await Future.wait([
-      CollectionService.isInCollection(userId, cardId),
-      CollectionService.isInWatchlist(userId, cardId),
-    ]);
+    final inCollection =
+        await CollectionRepository.isCardInCollection(userId, cardId);
+    final inWatchlist = await CollectionRepository.isInWatchlist(userId, cardId);
+
+    double? alertPrice;
+    if (inWatchlist) {
+      final db = await LocalDb.instance;
+      final rows = await db.query(
+        'watchlist',
+        columns: ['alert_price_idr'],
+        where: 'user_id = ? AND card_id = ?',
+        whereArgs: [userId, cardId],
+        limit: 1,
+      );
+      if (rows.isNotEmpty) {
+        alertPrice = (rows.first['alert_price_idr'] as num?)?.toDouble();
+      }
+    }
+
     if (!mounted) return;
-    state = state.copyWith(inCollection: results[0], inWatchlist: results[1]);
+    state = state.copyWith(
+      inCollection: inCollection,
+      inWatchlist: inWatchlist,
+      alertPriceIdr: alertPrice,
+    );
   }
 
-  Future<ToggleResult> toggleCollection() => _toggle(
-        isOn: state.inCollection,
-        add: CollectionService.addToCollection,
-        remove: CollectionService.removeFromCollection,
-        apply: (value) => state.copyWith(inCollection: value, isBusy: false),
-      );
-
-  Future<ToggleResult> toggleWatchlist() => _toggle(
-        isOn: state.inWatchlist,
-        add: (u, c) => CollectionService.addToWatchlist(u, c),
-        remove: CollectionService.removeFromWatchlist,
-        apply: (value) => state.copyWith(inWatchlist: value, isBusy: false),
-      );
-
-  Future<ToggleResult> _toggle({
-    required bool isOn,
-    required Future<void> Function(String userId, String cardId) add,
-    required Future<void> Function(String userId, String cardId) remove,
-    required CardDetailState Function(bool value) apply,
-  }) async {
+  Future<ToggleResult> toggleWatchlist({double? alertPriceIdr}) async {
     if (state.isBusy) return ToggleResult.failed;
 
     final userId = await SessionService.getActiveUserId();
@@ -142,32 +146,56 @@ class CardDetailNotifier extends StateNotifier<CardDetailState> {
 
     state = state.copyWith(isBusy: true);
     try {
-      if (isOn) {
-        await remove(userId, cardId);
+      if (state.inWatchlist) {
+        await CollectionRepository.removeFromWatchlist(userId, cardId);
+        if (!mounted) return ToggleResult.failed;
+        state = state.copyWith(inWatchlist: false, alertPriceIdr: null, isBusy: false);
+        return ToggleResult.removed;
       } else {
-        await add(userId, cardId);
+        await CollectionRepository.addToWatchlist(
+          userId,
+          cardId,
+          alertPriceIdr: alertPriceIdr,
+        );
+        if (!mounted) return ToggleResult.failed;
+        state = state.copyWith(
+          inWatchlist: true,
+          alertPriceIdr: alertPriceIdr,
+          isBusy: false,
+        );
+        return ToggleResult.added;
       }
-      if (!mounted) return ToggleResult.failed;
-      state = apply(!isOn);
-      return isOn ? ToggleResult.removed : ToggleResult.added;
     } catch (e) {
-      debugPrint('[HoloDex Error] Gagal ubah koleksi/watchlist: $e');
+      debugPrint('[HoloDex Error] Gagal ubah watchlist: $e');
       if (mounted) state = state.copyWith(isBusy: false);
       return ToggleResult.failed;
+    }
+  }
+
+  Future<bool> setWatchlistAlertPrice(double? alertPriceIdr) async {
+    final userId = await SessionService.getActiveUserId();
+    if (userId == null) return false;
+
+    try {
+      await CollectionRepository.updateAlertPrice(userId, cardId, alertPriceIdr);
+      if (mounted) {
+        state = state.copyWith(alertPriceIdr: alertPriceIdr);
+      }
+      return true;
+    } catch (e) {
+      debugPrint('[HoloDex Error] Gagal set alert price: $e');
+      return false;
     }
   }
 }
 
 /// Argumen family: id kartu + model awal (opsional) dari grid
-/// agar detail langsung tampil tanpa menunggu query.
 class CardDetailArgs {
   final String cardId;
   final CardModel? initialCard;
 
   const CardDetailArgs(this.cardId, [this.initialCard]);
 
-  // Kesetaraan hanya berdasarkan id supaya provider tidak dibuat ulang
-  // saat objek CardModel yang sama dikirim dari tempat berbeda.
   @override
   bool operator ==(Object other) =>
       other is CardDetailArgs && other.cardId == cardId;

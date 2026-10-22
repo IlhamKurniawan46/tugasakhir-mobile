@@ -27,58 +27,6 @@ class CardDetailScreen extends ConsumerStatefulWidget {
 class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   CardDetailArgs get _args => CardDetailArgs(widget.cardId, widget.initialCard);
 
-  void _handleCollectionToggle() async {
-    final notifier = ref.read(cardDetailProvider(_args).notifier);
-    final result = await notifier.toggleCollection();
-
-    if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-
-    switch (result) {
-      case ToggleResult.added:
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: AppColors.gold, size: 20),
-                SizedBox(width: 8),
-                Text('Kartu berhasil ditambahkan ke Koleksi!'),
-              ],
-            ),
-            backgroundColor: AppColors.surfaceHighest,
-            duration: Duration(seconds: 2),
-          ),
-        );
-        break;
-      case ToggleResult.removed:
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Kartu dihapus dari Koleksi.'),
-            backgroundColor: AppColors.surfaceHighest,
-            duration: Duration(seconds: 2),
-          ),
-        );
-        break;
-      case ToggleResult.notLoggedIn:
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Silakan login terlebih dahulu.'),
-            backgroundColor: AppColors.surfaceHighest,
-          ),
-        );
-        break;
-      case ToggleResult.failed:
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Gagal memperbarui status koleksi.'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-        break;
-    }
-  }
-
   void _handleWatchlistToggle() async {
     final notifier = ref.read(cardDetailProvider(_args).notifier);
     final result = await notifier.toggleWatchlist();
@@ -90,16 +38,32 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     switch (result) {
       case ToggleResult.added:
         messenger.showSnackBar(
-          const SnackBar(
-            content: Row(
+          SnackBar(
+            content: const Row(
               children: [
                 Icon(Icons.favorite, color: AppColors.pink, size: 20),
                 SizedBox(width: 8),
-                Text('Kartu ditambahkan ke Watchlist!'),
+                Expanded(
+                  child: Text(
+                    'Kartu ditambahkan ke Watchlist!',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
             backgroundColor: AppColors.surfaceHighest,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Atur Target',
+              textColor: AppColors.gold,
+              onPressed: () {
+                final card = ref.read(cardDetailProvider(_args)).card;
+                if (card != null) {
+                  _showTargetPriceDialog(card);
+                }
+              },
+            ),
           ),
         );
         break;
@@ -129,6 +93,100 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         );
         break;
     }
+  }
+
+  void _showTargetPriceDialog(CardModel card) {
+    final selectedCurrency = ref.read(currencyProvider);
+    final detailState = ref.read(cardDetailProvider(_args));
+    final controller = TextEditingController();
+
+    // Nilai target saat ini jika sudah ada
+    if (detailState.alertPriceIdr != null && detailState.alertPriceIdr! > 0) {
+      final converted = CurrencyService.convert(
+        detailState.alertPriceIdr!,
+        from: 'IDR',
+        to: selectedCurrency.code,
+      );
+      if (converted != null) {
+        controller.text = selectedCurrency == AppCurrency.idr
+            ? converted.round().toString()
+            : converted.toStringAsFixed(2);
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Row(
+          children: const [
+            Icon(Icons.price_change, color: AppColors.gold, size: 22),
+            SizedBox(width: 8),
+            Text('Target Harga Pantauan', style: TextStyle(fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Tentukan harga target untuk ${card.name} dalam ${selectedCurrency.code}. '
+              'Lencana "Target Tercapai" akan muncul jika harga pasar saat ini berada di bawah atau sama dengan target ini.',
+              style: const TextStyle(fontSize: 12, color: AppColors.outline),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                prefixText: '${selectedCurrency.symbol} ',
+                labelText: 'Harga Target (${selectedCurrency.code})',
+                hintText: selectedCurrency == AppCurrency.idr ? 'Contoh: 150000' : 'Contoh: 12.50',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          if (detailState.alertPriceIdr != null)
+            TextButton(
+              onPressed: () async {
+                await ref
+                    .read(cardDetailProvider(_args).notifier)
+                    .setWatchlistAlertPrice(null);
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Hapus Target', style: TextStyle(color: AppColors.error)),
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.gold,
+              foregroundColor: AppColors.onGold,
+            ),
+            onPressed: () async {
+              final rawText = controller.text.trim().replaceAll(',', '.');
+              final inputAmount = double.tryParse(rawText);
+              if (inputAmount != null && inputAmount > 0) {
+                final idrAmount = CurrencyService.convert(
+                  inputAmount,
+                  from: selectedCurrency.code,
+                  to: 'IDR',
+                );
+                await ref
+                    .read(cardDetailProvider(_args).notifier)
+                    .setWatchlistAlertPrice(idrAmount);
+              }
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showAiAdvisorDialog(CardModel card) {
@@ -728,61 +786,55 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   }
 
   Widget _buildActionButtons(CardModel card, CardDetailState detailState) {
-    return Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // Tombol AI Advisor
-        OutlinedButton.icon(
-          icon: const Icon(Icons.auto_awesome, color: AppColors.gold, size: 18),
-          label: const Text('AI Penasihat'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(0, 48),
-            foregroundColor: AppColors.goldSoft,
-            side: const BorderSide(color: AppColors.surfaceHigh),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            shape: RoundedRectangleBorder(
+        if (detailState.inCollection) ...[
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.cyan.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.cyan.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.collections_bookmark, color: AppColors.cyan, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Kartu ini ada di Koleksi Saya (Diperoleh dari Pasar)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.cyan,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          onPressed: () => _showAiAdvisorDialog(card),
-        ),
-        const SizedBox(width: 10),
-
-        // Tombol Tambah ke Koleksi
-        Expanded(
-          child: ElevatedButton.icon(
-            icon: Icon(
-              detailState.inCollection
-                  ? Icons.check_circle
-                  : Icons.add_circle,
-              color: detailState.inCollection ? AppColors.onSurface : AppColors.onGold,
-              size: 20,
+        ],
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            icon: const Icon(Icons.auto_awesome, color: AppColors.onGold, size: 20),
+            label: const Text(
+              'AI Penasihat Kartu (Gemini)',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
             ),
-            label: Text(
-              detailState.inCollection
-                  ? 'Dalam Koleksi ✓'
-                  : 'Tambah Koleksi',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: detailState.inCollection ? AppColors.onSurface : AppColors.onGold,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: detailState.inCollection
-                  ? AppColors.surfaceHighest
-                  : AppColors.gold,
-              elevation: 0,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(64, 48),
+              backgroundColor: AppColors.gold,
+              foregroundColor: AppColors.onGold,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: detailState.inCollection
-                      ? AppColors.surfaceHigh
-                      : AppColors.gold,
-                ),
               ),
             ),
-            onPressed: detailState.isBusy ? null : _handleCollectionToggle,
+            onPressed: () => _showAiAdvisorDialog(card),
           ),
         ),
       ],

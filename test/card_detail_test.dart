@@ -106,8 +106,70 @@ void main() {
       // Memastikan tidak ada layout exception sama sekali
       expect(tester.takeException(), isNull);
       expect(find.text('Charizard ex #199'), findsOneWidget);
-      expect(find.text('AI Penasihat'), findsOneWidget);
-      expect(find.text('Tambah Koleksi'), findsOneWidget);
+      expect(find.text('AI Penasihat Kartu (Gemini)'), findsOneWidget);
+    });
+
+    testWidgets('Watchlist SnackBar builds without overflow on 320dp with fontScale 1.3',
+        (tester) async {
+      tester.view.physicalSize = const Size(320 * 2, 600 * 2);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(320, 600),
+              textScaler: TextScaler.linear(1.3),
+            ),
+            child: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(Icons.favorite, color: AppColors.pink, size: 20),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Kartu ditambahkan ke Watchlist!',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: AppColors.surfaceHighest,
+                        duration: const Duration(seconds: 4),
+                        action: SnackBarAction(
+                          label: 'Atur Target',
+                          textColor: AppColors.gold,
+                          onPressed: () {},
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Show'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Show'));
+      await tester.pump(); // Start animation
+      await tester.pump(const Duration(milliseconds: 750)); // Finished animating in
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Kartu ditambahkan ke Watchlist!'), findsOneWidget);
+      expect(find.text('Atur Target'), findsOneWidget);
     });
   });
 }

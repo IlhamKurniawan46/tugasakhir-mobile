@@ -10,7 +10,9 @@ import '../features/dex/screens/card_detail_screen.dart';
 import '../features/dex/screens/dex_screen.dart';
 import '../features/dex/screens/search_screen.dart';
 import '../features/marketplace/screens/marketplace_screen.dart';
+import '../features/profile/screens/collection_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
+import '../features/profile/screens/watchlist_screen.dart';
 import '../features/saran_kesan/screens/saran_kesan_screen.dart';
 import '../shared/widgets/bottom_nav_shell.dart';
 
@@ -48,6 +50,16 @@ final GoRouter appRouter = GoRouter(
       path: '/calendar',
       name: 'calendar',
       builder: (context, state) => const CalendarScreen(),
+    ),
+    GoRoute(
+      path: '/collection',
+      name: 'collection',
+      builder: (context, state) => const CollectionScreen(),
+    ),
+    GoRoute(
+      path: '/watchlist',
+      name: 'watchlist',
+      builder: (context, state) => const WatchlistScreen(),
     ),
     // Shell 5 tab (Dex, Pasar, Profil, Saran & Logout)
     StatefulShellRoute.indexedStack(

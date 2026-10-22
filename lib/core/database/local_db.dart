@@ -52,6 +52,15 @@ class LocalDb {
         print('[HoloDex Error] Gagal migrasi SQLite v3: $e');
       }
     }
+    if (oldVersion < 4) {
+      try {
+        await db.execute(
+          "ALTER TABLE collection ADD COLUMN acquired_via TEXT DEFAULT 'purchase'",
+        );
+      } catch (e) {
+        print('[HoloDex Error] Gagal migrasi SQLite v4: $e');
+      }
+    }
   }
 
   static Future<void> _onCreate(Database db, int version) async {
@@ -115,12 +124,13 @@ class LocalDb {
       )
     ''');
 
-    // 5. Koleksi user
+    // 5. Koleksi user (Koleksi Saya)
     batch.execute('''
       CREATE TABLE collection (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT NOT NULL,
         card_id TEXT NOT NULL,
+        acquired_via TEXT DEFAULT 'purchase',
         acquired_at INTEGER,
         UNIQUE(user_id, card_id)
       )

@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/utils/price_formatter.dart';
+import '../../../shared/providers/currency_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../providers/collection_provider.dart';
+import '../providers/watchlist_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -225,6 +228,85 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+
+          // Ringkasan Portofolio Koleksi Saya
+          Builder(
+            builder: (context) {
+              final collectionState = ref.watch(collectionProvider);
+              final selectedCurrency = ref.watch(currencyProvider);
+              final totalValue =
+                  collectionState.getTotalInCurrency(selectedCurrency);
+
+              final String formattedValue;
+              if (totalValue != null) {
+                formattedValue =
+                    PriceFormatter.format(totalValue, selectedCurrency.code);
+              } else {
+                formattedValue = 'Kurs belum tersedia';
+              }
+
+              return InkWell(
+                onTap: () => context.push('/collection'),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    border: Border.all(color: AppColors.cyan.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.cyan.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.collections_bookmark,
+                          color: AppColors.cyan,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Total Nilai Koleksi Saya',
+                              style: textTheme.labelMedium?.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              formattedValue,
+                              style: textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.cyan,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${collectionState.items.length} kartu',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.outline,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.outline, size: 20),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
           const SizedBox(height: 24),
 
           // Pengaturan Keamanan
@@ -253,8 +335,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   title: const Text('Login Sidik Jari (Biometrik)'),
                   subtitle: Text(
                     user.fingerprintEnabled
-                        ? 'Aktif — Buka aplikasi dengan sensor sidik jari'
-                        : 'Nonaktif — Masuk menggunakan password',
+                        ? 'Aktif - Buka aplikasi dengan sensor sidik jari'
+                        : 'Nonaktif - Masuk menggunakan password',
                     style: textTheme.bodySmall?.copyWith(
                       color: AppColors.onSurfaceVariant,
                     ),
@@ -271,7 +353,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           // Menu Koleksi
           Text(
-            'MENU KOLEKSI',
+            'MENU KOLEKSI & PANTAUAN',
             style: textTheme.labelMedium?.copyWith(
               color: AppColors.outline,
               fontWeight: FontWeight.w600,
@@ -287,30 +369,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.collections_bookmark_outlined,
-                      color: AppColors.gold),
-                  title: const Text('Koleksi Kartu Saya'),
-                  trailing: const Icon(Icons.chevron_right, size: 20),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Coming Soon'),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final collectionCount =
+                        ref.watch(collectionProvider).items.length;
+                    return ListTile(
+                      leading: const Icon(Icons.collections_bookmark_outlined,
+                          color: AppColors.gold),
+                      title: const Text('Koleksi Saya'),
+                      subtitle: Text(
+                        '$collectionCount kartu tersimpan',
+                        style: const TextStyle(fontSize: 11, color: AppColors.outline),
                       ),
+                      trailing: const Icon(Icons.chevron_right, size: 20),
+                      onTap: () => context.push('/collection'),
                     );
                   },
                 ),
                 const Divider(height: 1, indent: 56),
-                ListTile(
-                  leading: const Icon(Icons.visibility_outlined,
-                      color: AppColors.gold),
-                  title: const Text('Watchlist & Pantauan Harga'),
-                  trailing: const Icon(Icons.chevron_right, size: 20),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Coming Soon'),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final watchlistCount =
+                        ref.watch(watchlistProvider).items.length;
+                    return ListTile(
+                      leading: const Icon(Icons.favorite_outline,
+                          color: AppColors.pink),
+                      title: const Text('Watchlist & Pantauan Harga'),
+                      subtitle: Text(
+                        '$watchlistCount kartu dipantau',
+                        style: const TextStyle(fontSize: 11, color: AppColors.outline),
                       ),
+                      trailing: const Icon(Icons.chevron_right, size: 20),
+                      onTap: () => context.push('/watchlist'),
                     );
                   },
                 ),
