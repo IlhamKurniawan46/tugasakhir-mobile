@@ -125,6 +125,17 @@ class MarketplaceRepository {
       throw MarketplaceFailure(e.message);
     } catch (e) {
       if (e is MarketplaceFailure) rethrow;
+      final str = e.toString().toLowerCase();
+      if (str.contains('socketexception') ||
+          str.contains('failed host lookup') ||
+          str.contains('clientexception') ||
+          str.contains('network') ||
+          str.contains('connection')) {
+        debugPrint('[HoloDex Error] create_listing offline / network error: $e');
+        throw const MarketplaceFailure(
+          'Gagal terhubung ke server Supabase. Periksa koneksi internet (Wi-Fi/Data) di perangkat Anda.',
+        );
+      }
       debugPrint('[HoloDex Error] create_listing exception: $e');
       throw const MarketplaceFailure('Terjadi kesalahan saat membuat listing.');
     }

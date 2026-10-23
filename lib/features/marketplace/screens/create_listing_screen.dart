@@ -7,12 +7,14 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme.dart';
 import '../../../core/database/local_db.dart';
 import '../../../core/models/card_model.dart';
+import '../../../core/services/location_service.dart';
 import '../../../core/services/marketplace_repository.dart';
 import '../../../core/utils/price_formatter.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../ai/services/gemini_service.dart';
 import '../../profile/providers/collection_provider.dart';
 import '../providers/marketplace_provider.dart';
+import '../widgets/location_picker_dialog.dart';
 
 class CreateListingScreen extends ConsumerStatefulWidget {
   final CardModel? preselectedCard;
@@ -35,18 +37,64 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   CardModel? _selectedCard;
   String _condition = 'near_mint';
   String _selectedCity = 'Jakarta Pusat';
+  String? _locationName;
   double _lat = -6.2088;
   double _lng = 106.8456;
   bool _isSubmitting = false;
   bool _isGeneratingAiDesc = false;
+  bool _isLocatingGps = false;
 
-  final Map<String, ({double lat, double lng})> _cities = {
-    'Jakarta Pusat': (lat: -6.2088, lng: 106.8456),
-    'Jakarta Selatan': (lat: -6.2615, lng: 106.8106),
-    'Bandung': (lat: -6.9175, lng: 107.6191),
-    'Surabaya': (lat: -7.2575, lng: 112.7521),
-    'Yogyakarta': (lat: -7.7956, lng: 110.3695),
-  };
+  Future<void> _openLocationPicker() async {
+    final result = await LocationPickerDialog.show(
+      context,
+      initialLat: _lat,
+      initialLng: _lng,
+      initialCity: _selectedCity,
+      initialLocationName: _locationName,
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _lat = result.latitude;
+        _lng = result.longitude;
+        _selectedCity = result.city;
+        _locationName = result.locationName;
+      });
+    }
+  }
+
+  Future<void> _useCurrentGpsLocation() async {
+    setState(() => _isLocatingGps = true);
+    try {
+      final pos = await LocationService.getCurrentPosition();
+      if (pos != null && mounted) {
+        setState(() {
+          _lat = pos.latitude;
+          _lng = pos.longitude;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Titik GPS berhasil dikunci sebagai lokasi COD! ✨'),
+            backgroundColor: AppColors.surfaceHighest,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else if (mounted) {
+        final explanation = await LocationService.getStatusExplanation();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(explanation),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLocatingGps = false);
+    }
+  }
 
   @override
   void initState() {
@@ -129,9 +177,13 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         sellerId: user.id,
         priceIdr: price,
         condition: _condition,
-        description: _descController.text.trim().isNotEmpty
-            ? _descController.text.trim()
-            : null,
+        description: (_locationName != null && _locationName!.isNotEmpty)
+            ? (_descController.text.trim().isNotEmpty
+                ? '📍 Patokan COD: $_locationName\n\n${_descController.text.trim()}'
+                : '📍 Patokan COD: $_locationName')
+            : (_descController.text.trim().isNotEmpty
+                ? _descController.text.trim()
+                : null),
         lat: _lat,
         lng: _lng,
       );
@@ -153,9 +205,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
+        final errorText = e is MarketplaceFailure ? e.message : e.toString();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal membuat listing: $e'),
+            content: Text(errorText),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -368,41 +421,139 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Lokasi Kota COD
+            // Lokasi Titik COD Penjual
             Text(
-              'Lokasi Penjual (COD / Pengiriman)',
+              'Titik Lokasi COD Penjual',
               style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.surfaceHigh),
               ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedCity,
-                  isExpanded: true,
-                  dropdownColor: AppColors.surface,
-                  items: _cities.keys.map((city) {
-                    return DropdownMenuItem(
-                      value: city,
-                      child: Text(city),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() {
-                        _selectedCity = val;
-                        final coords = _cities[val]!;
-                        _lat = coords.lat;
-                        _lng = coords.lng;
-                      });
-                    }
-                  },
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.location_on, color: AppColors.gold, size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedCity,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Koordinat: ${_lat.toStringAsFixed(5)}, ${_lng.toStringAsFixed(5)}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontFamily: 'monospace',
+                                color: AppColors.cyan,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_locationName != null && _locationName!.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceLowest,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.surfaceHigh),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.storefront_outlined, size: 14, color: AppColors.outline),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Patokan: $_locationName',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  // Tombol Aksi: Pilih di Peta & Pakai GPS
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.gold,
+                            side: const BorderSide(color: AppColors.gold, width: 1),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                          onPressed: _openLocationPicker,
+                          icon: const Icon(Icons.map_outlined, size: 16),
+                          label: const Text(
+                            'Pilih di Peta',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.cyan,
+                            side: BorderSide(
+                              color: AppColors.cyan.withValues(alpha: 0.7),
+                              width: 1,
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                          onPressed: _isLocatingGps ? null : _useCurrentGpsLocation,
+                          icon: _isLocatingGps
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.cyan,
+                                  ),
+                                )
+                              : const Icon(Icons.my_location, size: 16),
+                          label: const Text(
+                            'Pakai GPS',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 20),
@@ -714,8 +865,10 @@ class _CardPickerSheetState extends ConsumerState<_CardPickerSheet>
   }
 
   Widget _buildCardTile(CardModel card) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       leading: ClipRRect(
         borderRadius: BorderRadius.circular(4),
         child: SizedBox(
@@ -743,6 +896,7 @@ class _CardPickerSheetState extends ConsumerState<_CardPickerSheet>
       ),
       trailing: const Icon(Icons.arrow_forward_ios, size: 14),
       onTap: () => widget.onCardSelected(card),
-    );
-  }
+    ),
+  );
+}
 }
