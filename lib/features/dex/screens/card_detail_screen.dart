@@ -284,7 +284,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
 
           // 4. Modul Harga Pasar & Tombol Primary Konversi Harga
           Container(

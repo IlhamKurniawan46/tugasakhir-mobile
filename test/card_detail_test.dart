@@ -106,7 +106,7 @@ void main() {
       // Memastikan tidak ada layout exception sama sekali
       expect(tester.takeException(), isNull);
       expect(find.text('Charizard ex #199'), findsOneWidget);
-      expect(find.text('AI Penasihat Kartu (Gemini)'), findsOneWidget);
+      expect(find.text('Tanya HoloBot'), findsOneWidget);
 
       // Verifikasi tombol primary "Konversi Harga" tampil dan box TCGplayer/Cardmarket sudah dihapus
       expect(find.text('Konversi Harga'), findsOneWidget);

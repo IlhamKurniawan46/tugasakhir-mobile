@@ -51,30 +51,34 @@ class BottomNavShell extends ConsumerWidget {
       body: navigationShell,
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
+          height: 62,
           backgroundColor: AppColors.surfaceLow,
-          indicatorColor: AppColors.gold.withValues(alpha: 0.18),
+          indicatorColor: Colors.transparent,
           iconTheme: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const IconThemeData(color: AppColors.gold);
+              return const IconThemeData(color: AppColors.gold, size: 23);
             }
-            return const IconThemeData(color: AppColors.outline);
+            return const IconThemeData(color: AppColors.outline, size: 23);
           }),
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
               return const TextStyle(
                 color: AppColors.gold,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
               );
             }
             return const TextStyle(
               color: AppColors.outline,
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w500,
             );
           }),
         ),
         child: NavigationBar(
+          height: 62,
+          elevation: 0,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           selectedIndex: navigationShell.currentIndex < 4
               ? navigationShell.currentIndex
               : 0,
