@@ -9,6 +9,7 @@ import '../../../core/utils/price_formatter.dart';
 import '../../../shared/providers/currency_provider.dart';
 import '../providers/card_detail_provider.dart';
 import '../widgets/holo_card_widget.dart';
+import '../../ai/widgets/ai_advisor_sheet.dart';
 
 class CardDetailScreen extends ConsumerStatefulWidget {
   final String cardId;
@@ -87,90 +88,11 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     }
   }
 
-  void _showAiAdvisorDialog(CardModel card) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surfaceLow,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceHighest,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Row(
-                children: const [
-                  Icon(Icons.auto_awesome, color: AppColors.gold, size: 24),
-                  SizedBox(width: 10),
-                  Text(
-                    'AI Penasihat Kartu (Gemini)',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.gold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.surfaceHigh),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Analisis Nilai: ${card.name}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Coming Soon',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.goldSoft,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.gold,
-                    foregroundColor: AppColors.onGold,
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Tutup', style: TextStyle(fontWeight: FontWeight.w700)),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+  void _showAiAdvisorDialog(CardModel card, [String? livePriceFormatted]) {
+    AiAdvisorSheet.show(
+      context,
+      card,
+      livePriceFormatted: livePriceFormatted,
     );
   }
 
@@ -649,7 +571,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           const SizedBox(height: 20),
 
           // 5. Action Buttons (AI Penasihat & Tambah Koleksi)
-          _buildActionButtons(card, detailState),
+          _buildActionButtons(card, detailState, mainPriceFormatted),
         ],
       ),
     );
@@ -687,7 +609,11 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     );
   }
 
-  Widget _buildActionButtons(CardModel card, CardDetailState detailState) {
+  Widget _buildActionButtons(
+    CardModel card,
+    CardDetailState detailState,
+    String? livePriceFormatted,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -736,7 +662,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: () => _showAiAdvisorDialog(card),
+            onPressed: () => _showAiAdvisorDialog(card, livePriceFormatted),
           ),
         ),
       ],

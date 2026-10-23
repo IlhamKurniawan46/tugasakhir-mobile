@@ -11,6 +11,7 @@ class EnvLoader {
   }
 
   static String get supabaseUrl {
+    if (!dotenv.isInitialized) return '';
     final raw = (dotenv.env['SUPABASE_URL'] ?? '').trim();
     // Hilangkan trailing /rest/v1 atau garis miring di akhir jika terisi tidak sengaja
     return raw
@@ -18,11 +19,15 @@ class EnvLoader {
         .replaceAll(RegExp(r'/+$'), '');
   }
 
-  static String get supabaseAnonKey =>
-      (dotenv.env['SUPABASE_ANON_KEY'] ?? '').trim();
+  static String get supabaseAnonKey {
+    if (!dotenv.isInitialized) return '';
+    return (dotenv.env['SUPABASE_ANON_KEY'] ?? '').trim();
+  }
 
-  static String get geminiApiKey =>
-      (dotenv.env['GEMINI_API_KEY'] ?? '').trim();
+  static String get geminiApiKey {
+    if (!dotenv.isInitialized) return '';
+    return (dotenv.env['GEMINI_API_KEY'] ?? '').trim();
+  }
 
   static bool get isSupabaseConfigured =>
       supabaseUrl.isNotEmpty &&

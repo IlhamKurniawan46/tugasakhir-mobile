@@ -10,6 +10,7 @@ import '../../../core/models/card_model.dart';
 import '../../../core/services/marketplace_repository.dart';
 import '../../../core/utils/price_formatter.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../ai/services/gemini_service.dart';
 import '../../profile/providers/collection_provider.dart';
 import '../providers/marketplace_provider.dart';
 
@@ -37,6 +38,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   double _lat = -6.2088;
   double _lng = 106.8456;
   bool _isSubmitting = false;
+  bool _isGeneratingAiDesc = false;
 
   final Map<String, ({double lat, double lng})> _cities = {
     'Jakarta Pusat': (lat: -6.2088, lng: 106.8456),
@@ -154,6 +156,54 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal membuat listing: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _generateAiDescription() async {
+    if (_selectedCard == null || _isGeneratingAiDesc) return;
+
+    setState(() => _isGeneratingAiDesc = true);
+
+    final conditionLabels = {
+      'mint': 'Mint (Sempurna)',
+      'near_mint': 'Near Mint (Sangat Mulus)',
+      'lightly_played': 'Lightly Played (Sedikit Bekas Main)',
+      'moderately_played': 'Moderately Played (Ada Bekas Pakai)',
+      'heavily_played': 'Heavily Played (Banyak Goresan / Rusak)',
+    };
+    final conditionLabel = conditionLabels[_condition] ?? _condition;
+
+    try {
+      final desc = await GeminiService.generateListingDescription(
+        card: _selectedCard!,
+        conditionLabel: conditionLabel,
+      );
+
+      if (mounted) {
+        setState(() {
+          _descController.text = desc;
+          _isGeneratingAiDesc = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Deskripsi otomatis berhasil dibuat dengan AI! ✨'),
+            backgroundColor: AppColors.surfaceHighest,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isGeneratingAiDesc = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal membuat deskripsi via AI: $e'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -358,9 +408,40 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             const SizedBox(height: 20),
 
             // Deskripsi / Catatan Penjual
-            Text(
-              'Deskripsi / Catatan Kondisi (Opsional)',
-              style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Deskripsi / Catatan Kondisi',
+                  style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                if (_selectedCard != null)
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    icon: _isGeneratingAiDesc
+                        ? const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.gold,
+                            ),
+                          )
+                        : const Icon(Icons.auto_awesome, size: 14, color: AppColors.gold),
+                    label: Text(
+                      _isGeneratingAiDesc ? 'Membuat...' : 'Tulis via AI ✨',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                    onPressed: _isGeneratingAiDesc ? null : _generateAiDescription,
+                  ),
+              ],
             ),
             const SizedBox(height: 8),
             TextFormField(
