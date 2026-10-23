@@ -24,6 +24,8 @@ class CardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final hasRarity = card.rarity != null && card.rarity!.trim().isNotEmpty;
+    final rarityText = card.rarity?.trim() ?? '';
 
     return InkWell(
       onTap: onTap,
@@ -54,126 +56,126 @@ class CardTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Gambar Kartu (Aspect Ratio standar kartu Pokémon 63:88)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: 63 / 88,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          if (card.lowResImageUrl != null)
-                            CachedNetworkImage(
-                              imageUrl: card.lowResImageUrl!,
-                              fit: BoxFit.cover,
-                              fadeInDuration: const Duration(milliseconds: 200),
-                              placeholder: (context, url) => Container(
-                                color: AppColors.surfaceLow,
-                                child: const Center(
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 1.8,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        AppColors.gold,
+            // 1. Header Box: Badge Rarity (Kiri) & Indikator Multi-select (Kanan) di luar gambar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+              child: SizedBox(
+                height: 20,
+                child: Row(
+                  children: [
+                    // Badge Rarity rata kiri
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: hasRarity
+                            ? Semantics(
+                                label: 'Kelangkaan: $rarityText',
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceLowest.withValues(alpha: 0.85),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: AppColors.surfaceHigh,
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      rarityText,
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.goldSoft,
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ),
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                color: AppColors.surfaceLow,
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.broken_image_outlined,
-                                    color: AppColors.outline,
-                                    size: 32,
-                                  ),
-                                ),
-                              ),
-                            )
-                          else
-                            Container(
-                              color: AppColors.surfaceLow,
-                              child: const Center(
-                                child: Icon(
-                                  Icons.style_outlined,
-                                  color: AppColors.outline,
-                                  size: 36,
-                                ),
-                              ),
-                            ),
-
-                          // Badge Rarity jika ada
-                          if (card.rarity != null && card.rarity!.isNotEmpty)
-                            Positioned(
-                              top: 6,
-                              left: 6,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceLowest.withValues(alpha: 0.85),
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(
-                                    color: AppColors.surfaceHigh,
-                                    width: 0.8,
-                                  ),
-                                ),
-                                child: Text(
-                                  card.rarity!,
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.goldSoft,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-
-                          // Indikator Pilihan (Mode Multi-select)
-                          if (isSelectionMode)
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.surfaceLowest,
-                                ),
-                                child: Icon(
-                                  isSelected
-                                      ? Icons.check_circle
-                                      : Icons.radio_button_unchecked,
-                                  color: isSelected
-                                      ? AppColors.gold
-                                      : AppColors.outline.withValues(alpha: 0.8),
-                                  size: 22,
-                                ),
-                              ),
-                            ),
-                        ],
+                              )
+                            : const SizedBox.shrink(),
                       ),
                     ),
-                  ),
+
+                    // Indikator Pilihan (Mode Multi-select)
+                    if (isSelectionMode)
+                      Container(
+                        margin: const EdgeInsets.only(left: 4),
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.surfaceLowest,
+                        ),
+                        child: Icon(
+                          isSelected
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: isSelected
+                              ? AppColors.gold
+                              : AppColors.outline.withValues(alpha: 0.8),
+                          size: 18,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
 
-            // Info Kartu: Nama, Set & Badge Harga
+            // Tambahan jarak antara rarity dan gambar kartu
+            const SizedBox(height: 5),
+
+            // 2. Gambar Kartu (Aspect Ratio standar kartu Pokémon 63:88)
+            // Mengambil lebar penuh (padding horizontal 10) agar batas kiri & kanan sejajar dengan Rarity, Nama, dan Set
             Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: AspectRatio(
+                aspectRatio: 63 / 88,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: card.lowResImageUrl != null
+                      ? CachedNetworkImage(
+                          imageUrl: card.lowResImageUrl!,
+                          fit: BoxFit.cover,
+                          fadeInDuration: const Duration(milliseconds: 200),
+                          placeholder: (context, url) => Container(
+                            color: AppColors.surfaceLow,
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: AppColors.surfaceLow,
+                            child: const Center(
+                              child: Icon(
+                                Icons.broken_image_outlined,
+                                color: AppColors.outline,
+                                size: 32,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          color: AppColors.surfaceLow,
+                          child: const Center(
+                            child: Icon(
+                              Icons.style_outlined,
+                              color: AppColors.outline,
+                              size: 36,
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+            ),
+
+            // 3. Info Kartu: Nama, Set & Badge Harga (padding bottom 8dp sama simetris dengan padding top 8dp)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 5, 10, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     card.name,
@@ -194,7 +196,7 @@ class CardTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   PriceBadge(card: card),
                 ],
               ),

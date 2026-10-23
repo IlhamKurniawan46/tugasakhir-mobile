@@ -13,6 +13,10 @@ import '../../profile/providers/watchlist_provider.dart';
 import '../providers/dex_provider.dart';
 import '../widgets/card_tile.dart';
 
+/// Padding horizontal bersama untuk seluruh elemen di konten layar Dex
+/// Menjamin tepi kolom pencarian, tile fitur, header katalog, dan grid kartu sejajar presisi.
+const double kScreenHorizontalPadding = 16.0;
+
 class DexScreen extends ConsumerStatefulWidget {
   const DexScreen({super.key});
 
@@ -488,7 +492,12 @@ class _DexScreenState extends ConsumerState<DexScreen> {
           children: [
             // Bar Pencarian & Filter Cepat
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              padding: const EdgeInsets.fromLTRB(
+                kScreenHorizontalPadding,
+                12,
+                kScreenHorizontalPadding,
+                4,
+              ),
               child: Container(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
@@ -596,16 +605,27 @@ class _DexScreenState extends ConsumerState<DexScreen> {
     AppCurrency selectedCurrency,
     TextTheme textTheme,
   ) {
+    final textScaler = MediaQuery.textScalerOf(context);
+    final isLargeText = textScaler.scale(10) > 11.5;
+    // Pada font normal (1.0), 0.505 membuat tinggi kartu pas dengan padding bottom sama dengan padding top (8dp)
+    // Pada font besar (>=1.2), 0.465 memberikan ruang ekstra agar tidak terjadi overflow
+    final cardAspectRatio = isLargeText ? 0.465 : 0.505;
+
     Widget contentSliver;
 
     // 1. Shimmer Skeleton Loading di awal
     if (state.isLoading && state.cards.isEmpty) {
       contentSliver = SliverPadding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(
+          kScreenHorizontalPadding,
+          4,
+          kScreenHorizontalPadding,
+          24,
+        ),
         sliver: SliverGrid(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 0.63,
+            childAspectRatio: cardAspectRatio,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
           ),
@@ -652,11 +672,16 @@ class _DexScreenState extends ConsumerState<DexScreen> {
     } else {
       // 3. Grid Kartu Katalog
       contentSliver = SliverPadding(
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+        padding: const EdgeInsets.fromLTRB(
+          kScreenHorizontalPadding,
+          4,
+          kScreenHorizontalPadding,
+          24,
+        ),
         sliver: SliverGrid(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 0.63,
+            childAspectRatio: cardAspectRatio,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
           ),
@@ -706,29 +731,8 @@ class _DexScreenState extends ConsumerState<DexScreen> {
               child: _buildFeatureTiles(context),
             ),
 
-          // 2. Judul Section & Selector Mata Uang Global (IDR | USD | EUR)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Katalog dan Daftar Harga',
-                    textAlign: TextAlign.left,
-                    style: textTheme.titleSmall?.copyWith(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onSurface,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildCurrencyChips(selectedCurrency),
-                ],
-              ),
-            ),
-          ),
+          // 2. Header Bagian Katalog & Selector Mata Uang Kompak
+          _buildCatalogHeader(context, selectedCurrency, textTheme),
 
           // 3. Grid Kartu Katalog / Loading / Error
           contentSliver,
@@ -737,59 +741,169 @@ class _DexScreenState extends ConsumerState<DexScreen> {
     );
   }
 
-  /// Selector Mata Uang Global (IDR | USD | EUR) - Terbagi Merata Selebar Kolom Cari
-  Widget _buildCurrencyChips(AppCurrency selectedCurrency) {
+  /// Header Katalog: Judul tegas "Katalog" (kiri) + Chip Mata Uang Kompak (kanan)
+  /// Menggunakan LayoutBuilder agar responsif: 1 baris pada layar normal (>=360dp),
+  /// dan otomatis 2 baris pada layar sempit/font besar tanpa overflow.
+  Widget _buildCatalogHeader(
+    BuildContext context,
+    AppCurrency selectedCurrency,
+    TextTheme textTheme,
+  ) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          kScreenHorizontalPadding,
+          10,
+          kScreenHorizontalPadding,
+          8,
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final textScaler = MediaQuery.textScalerOf(context);
+            final estimatedTitleWidth = textScaler.scale(90.0);
+            final estimatedChipsWidth =
+                AppCurrency.values.length * textScaler.scale(46.0) +
+                    (AppCurrency.values.length - 1) * 6.0;
+            final isSingleLine = constraints.maxWidth >=
+                (estimatedTitleWidth + estimatedChipsWidth + 12.0);
+
+            final titleWidget = Semantics(
+              header: true,
+              child: Text(
+                'Katalog',
+                maxLines: 1,
+                style: textTheme.titleLarge?.copyWith(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.onSurface,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            );
+
+            if (isSingleLine) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: titleWidget,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildCompactCurrencyChips(selectedCurrency),
+                ],
+              );
+            } else {
+              // Dua baris untuk layar sangat sempit atau font besar
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: titleWidget,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildExpandedCurrencyChips(selectedCurrency),
+                ],
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Chip Mata Uang Mode Kompak (Mengikuti isi teks, tinggi visual 32-36dp, tap target >= 48dp)
+  Widget _buildCompactCurrencyChips(AppCurrency selectedCurrency) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: AppCurrency.values.map((currency) {
+        final isSelected = selectedCurrency == currency;
+        return Padding(
+          padding: const EdgeInsets.only(left: 6),
+          child: _buildCurrencyChipItem(currency, isSelected),
+        );
+      }).toList(),
+    );
+  }
+
+  /// Chip Mata Uang Mode Merata (Expanded, digunakan saat fallback dua baris)
+  Widget _buildExpandedCurrencyChips(AppCurrency selectedCurrency) {
     return Row(
       children: AppCurrency.values.map((currency) {
         final isSelected = selectedCurrency == currency;
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2.5),
-            child: ChoiceChip(
-              label: Center(
-                child: Text(
-                  currency.code,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              selected: isSelected,
-              showCheckmark: false,
-              onSelected: (_) {
-                ref
-                    .read(currencyProvider.notifier)
-                    .setCurrency(currency);
-              },
-              selectedColor: AppColors.gold,
-              backgroundColor: AppColors.surface,
-              labelStyle: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: isSelected
-                    ? AppColors.onGold
-                    : AppColors.onSurfaceVariant,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-              visualDensity: VisualDensity.compact,
-              side: BorderSide(
-                color: isSelected
-                    ? AppColors.gold
-                    : AppColors.surfaceHigh,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
+            child: _buildCurrencyChipItem(currency, isSelected, isExpanded: true),
           ),
         );
       }).toList(),
     );
   }
 
+  /// Item Chip Mata Uang Tunggal
+  Widget _buildCurrencyChipItem(
+    AppCurrency currency,
+    bool isSelected, {
+    bool isExpanded = false,
+  }) {
+    return Semantics(
+      button: true,
+      label: 'Pilih mata uang ${currency.code}',
+      selected: isSelected,
+      child: ChoiceChip(
+        label: isExpanded
+            ? Center(
+                child: Text(
+                  currency.code,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              )
+            : Text(
+                currency.code,
+                maxLines: 1,
+              ),
+        selected: isSelected,
+        showCheckmark: false,
+        onSelected: (_) {
+          ref.read(currencyProvider.notifier).setCurrency(currency);
+        },
+        selectedColor: AppColors.gold,
+        backgroundColor: AppColors.surface,
+        labelStyle: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: isSelected ? AppColors.onGold : AppColors.onSurfaceVariant,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.padded,
+        side: BorderSide(
+          color: isSelected ? AppColors.gold : AppColors.surfaceHigh,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+    );
+  }
+
   /// Baris Fitur: 4 Tile Berlabel (Event, Konverter, Mini Game, HoloBot)
   Widget _buildFeatureTiles(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        kScreenHorizontalPadding,
+        4,
+        kScreenHorizontalPadding,
+        8,
+      ),
       child: Row(
         children: [
           _buildSingleFeatureTile(
@@ -891,30 +1005,64 @@ class _DexScreenState extends ConsumerState<DexScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceHigh,
-                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+          // Header shimmer (rarity badge)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+            child: SizedBox(
+              height: 20,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  height: 14,
+                  width: 54,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceHigh,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
               ),
             ),
           ),
+          const SizedBox(height: 5),
+          // Gambar shimmer (rasio 63:88)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: AspectRatio(
+              aspectRatio: 63 / 88,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceHigh,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+          // Info shimmer (rapat tanpa gap besar)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
                   height: 12,
                   width: 80,
                   color: AppColors.surfaceHigh,
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Container(
                   height: 10,
                   width: 50,
                   color: AppColors.surfaceHigh,
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  height: 18,
+                  width: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceHigh,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
               ],
             ),

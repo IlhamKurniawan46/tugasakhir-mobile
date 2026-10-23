@@ -299,11 +299,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       return _buildEmptyState(state);
     }
 
+    final textScaler = MediaQuery.textScalerOf(context);
+    final isLargeText = textScaler.scale(10) > 11.5;
+    final cardAspectRatio = isLargeText ? 0.465 : 0.505;
+
     return GridView.builder(
-      padding: const EdgeInsets.all(12),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.63,
+        childAspectRatio: cardAspectRatio,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
