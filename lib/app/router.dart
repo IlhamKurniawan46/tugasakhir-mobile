@@ -18,6 +18,7 @@ import '../features/marketplace/screens/transaction_history_screen.dart';
 import '../features/profile/screens/collection_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/profile/screens/watchlist_screen.dart';
+import '../features/pack_opening/screens/pack_opening_screen.dart';
 import '../features/saran_kesan/screens/saran_kesan_screen.dart';
 import '../shared/widgets/bottom_nav_shell.dart';
 
@@ -65,6 +66,11 @@ final GoRouter appRouter = GoRouter(
       path: '/watchlist',
       name: 'watchlist',
       builder: (context, state) => const WatchlistScreen(),
+    ),
+    GoRoute(
+      path: '/pack-opening',
+      name: 'pack-opening',
+      builder: (context, state) => const PackOpeningScreen(),
     ),
     // Shell 5 tab (Dex, Pasar, Profil, Saran & Logout)
     StatefulShellRoute.indexedStack(

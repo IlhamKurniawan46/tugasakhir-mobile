@@ -404,6 +404,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     );
                   },
                 ),
+                const Divider(height: 1, indent: 56),
+                ListTile(
+                  leading: const Icon(Icons.catching_pokemon,
+                      color: AppColors.gold),
+                  title: const Text('Buka Booster Pack (Mini Game)'),
+                  subtitle: const Text(
+                    'Goyangkan HP & uji keberuntungan tarikan kartu',
+                    style: TextStyle(fontSize: 11, color: AppColors.outline),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => context.push('/pack-opening'),
+                ),
               ],
             ),
           ),

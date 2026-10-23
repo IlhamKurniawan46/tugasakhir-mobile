@@ -677,6 +677,20 @@ class _DexScreenState extends ConsumerState<DexScreen> {
             Expanded(child: _buildBody(dexState)),
           ],
         ),
+        floatingActionButton: _isSelectionMode
+            ? null
+            : FloatingActionButton.extended(
+                heroTag: 'pack_opening_fab',
+                backgroundColor: AppColors.gold,
+                foregroundColor: Colors.black,
+                elevation: 4,
+                icon: const Icon(Icons.catching_pokemon, size: 20),
+                label: const Text(
+                  'Buka Pack',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                ),
+                onPressed: () => context.push('/pack-opening'),
+              ),
       ),
     );
   }
