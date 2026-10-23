@@ -180,14 +180,19 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Nominal Asal',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.onSurfaceVariant,
+                      const Expanded(
+                        child: Text(
+                          'Nominal Asal',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.onSurfaceVariant,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       // Pilihan Mata Uang Asal (tanpa box/background terpisah)
                       DropdownButtonHideUnderline(
                         child: DropdownButton<AppCurrency>(
@@ -263,7 +268,7 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
 
             const SizedBox(height: 20),
 
-            // 2. Hasil Konversi Instan ke 2 Mata Uang Lainnya
+            // 2. Hasil Konversi Instan ke 3 Mata Uang Lainnya
             if (rates == null || !CurrencyService.hasRates) ...[
               Container(
                 padding: const EdgeInsets.all(20),
@@ -318,7 +323,7 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
               ),
               const SizedBox(height: 10),
 
-              // Render hasil ke 2 mata uang target
+              // Render hasil ke 3 mata uang target lainnya
               ...AppCurrency.values
                   .where((c) => c != _sourceCurrency)
                   .map((targetCurrency) {
@@ -345,6 +350,9 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
       case AppCurrency.eur:
         increments = [1, 5, 10, 25, 50, 100];
         break;
+      case AppCurrency.jpy:
+        increments = [1000, 5000, 10000, 50000, 100000];
+        break;
       case AppCurrency.idr:
         increments = [10000, 50000, 100000, 500000, 1000000];
         break;
@@ -362,6 +370,8 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
               } else {
                 label = '+${(val / 1000).toInt()}rb';
               }
+            } else if (currency == AppCurrency.jpy) {
+              label = '+¥${(val / 1000).toInt()}rb';
             } else {
               label = '+${currency.symbol}${val.toInt()}';
             }
@@ -439,14 +449,19 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                target.label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.onSurfaceVariant,
+              Expanded(
+                child: Text(
+                  target.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.onSurfaceVariant,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
@@ -466,15 +481,37 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            converted != null ? PriceFormatter.format(converted, target.code) : '-',
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              color: AppColors.gold,
-              letterSpacing: -0.5,
+          if (converted != null)
+            Text(
+              PriceFormatter.format(converted, target.code),
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                color: AppColors.gold,
+                letterSpacing: -0.5,
+              ),
+            )
+          else ...[
+            Text(
+              target == AppCurrency.jpy ? 'Kurs JPY belum tersedia' : '-',
+              style: TextStyle(
+                fontSize: target == AppCurrency.jpy ? 14 : 26,
+                fontWeight: FontWeight.w600,
+                color: target == AppCurrency.jpy ? AppColors.error : AppColors.gold,
+              ),
             ),
-          ),
+            if (target == AppCurrency.jpy)
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Text(
+                  'Hubungkan internet untuk memuat kurs JPY dari ECB.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ),
+          ],
           const SizedBox(height: 6),
           if (unitRate != null)
             Text(

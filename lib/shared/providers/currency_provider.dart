@@ -5,11 +5,12 @@ import '../../core/models/card_model.dart';
 import '../../core/services/currency_service.dart';
 import '../../core/utils/price_formatter.dart';
 
-/// 3 mata uang utama yang didukung HoloDex.
+/// 4 mata uang resmi yang didukung HoloDex (IDR default + USD, EUR, JPY).
 enum AppCurrency {
   idr('IDR', 'Rp', 'Rupiah (IDR)'),
   usd('USD', r'$', 'US Dollar (USD)'),
-  eur('EUR', '€', 'Euro (EUR)');
+  eur('EUR', '€', 'Euro (EUR)'),
+  jpy('JPY', '¥', 'Yen Jepang (JPY)');
 
   final String code;
   final String symbol;
@@ -154,6 +155,11 @@ class CardPriceCalculator {
         return card.priceUsd ?? card.priceRefUsd;
       case AppCurrency.eur:
         return card.priceEur;
+      case AppCurrency.jpy:
+        if (card.priceIdr != null) {
+          return CurrencyService.convert(card.priceIdr!, from: 'IDR', to: 'JPY');
+        }
+        return null;
     }
   }
 

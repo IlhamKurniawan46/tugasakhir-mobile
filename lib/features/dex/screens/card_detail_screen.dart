@@ -4,8 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/card_model.dart';
-import '../../../core/services/currency_service.dart';
-import '../../../core/utils/price_formatter.dart';
 import '../../../shared/providers/currency_provider.dart';
 import '../providers/card_detail_provider.dart';
 import '../widgets/holo_card_widget.dart';
@@ -197,22 +195,10 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   Widget _buildCardContent(CardModel card, CardDetailState detailState) {
     final selectedCurrency = ref.watch(currencyProvider);
     ref.watch(currencyRatesProvider);
-
     final double? convertedPrice =
         CardPriceCalculator.getConvertedPrice(card, selectedCurrency);
     final String mainPriceFormatted =
         CardPriceCalculator.formatCardPrice(card, selectedCurrency);
-
-    final double? tcgplayerUsd = card.priceUsd ?? card.priceRefUsd;
-    final double? cardmarketEur = card.priceEur;
-
-    final double? tcgplayerInSelected = tcgplayerUsd != null
-        ? CurrencyService.convert(tcgplayerUsd, from: 'USD', to: selectedCurrency.code)
-        : null;
-
-    final double? cardmarketInSelected = cardmarketEur != null
-        ? CurrencyService.convert(cardmarketEur, from: 'EUR', to: selectedCurrency.code)
-        : null;
 
     final bool isHolo = HoloCardWidget.isHoloRarity(card.rarity);
 
@@ -230,7 +216,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             intensity: HoloCardWidget.intensityForRarity(card.rarity),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // 2. Badges Row: Rarity, Local ID, Set
           Wrap(
@@ -298,205 +284,119 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             ],
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
-          // 4. Modul Harga Pasar & Multi-Currency (IDR/USD/EUR)
-          InkWell(
-            onTap: () {
-              context.push(
-                '/converter',
-                extra: {
-                  'initialAmount': convertedPrice,
-                  'initialCurrency': selectedCurrency.code,
-                  'cardName': card.name,
-                },
-              );
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.surfaceHigh),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            'Harga Pasar Referensi',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: AppColors.gold.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              selectedCurrency.code,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.gold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceLowest,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.surfaceHigh),
-                        ),
-                        child: Text(
-                          card.priceSource?.toUpperCase() ?? 'TCGPLAYER',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.goldSoft,
+          // 4. Modul Harga Pasar & Tombol Primary Konversi Harga
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.surfaceHigh),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'Harga Pasar Referensi',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    mainPriceFormatted,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.gold,
-                      letterSpacing: -0.5,
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: AppColors.gold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            selectedCurrency.code,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.gold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(color: AppColors.surfaceHigh, height: 1),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      // TCGplayer USD
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceLowest,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.surfaceHigh),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'TCGplayer (USD)',
-                                style: TextStyle(fontSize: 10, color: AppColors.outline),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                formatUsd(tcgplayerUsd),
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.onSurface,
-                                ),
-                              ),
-                              if (selectedCurrency != AppCurrency.usd &&
-                                  tcgplayerInSelected != null) ...[
-                                const SizedBox(height: 1),
-                                Text(
-                                  '≈ ${PriceFormatter.format(tcgplayerInSelected, selectedCurrency.code)}',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: AppColors.goldSoft,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceLowest,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.surfaceHigh),
                       ),
-                      const SizedBox(width: 8),
-                      // Cardmarket EUR
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceLowest,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.surfaceHigh),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Cardmarket (EUR)',
-                                style: TextStyle(fontSize: 10, color: AppColors.outline),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                formatEur(cardmarketEur),
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.onSurface,
-                                ),
-                              ),
-                              if (selectedCurrency != AppCurrency.eur &&
-                                  cardmarketInSelected != null) ...[
-                                const SizedBox(height: 1),
-                                Text(
-                                  '≈ ${PriceFormatter.format(cardmarketInSelected, selectedCurrency.code)}',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: AppColors.goldSoft,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: const [
-                      Icon(Icons.currency_exchange, size: 12, color: AppColors.goldSoft),
-                      SizedBox(width: 4),
-                      Text(
-                        'Ketuk untuk buka Konverter Mata Uang ➔',
-                        style: TextStyle(
+                      child: Text(
+                        card.priceSource?.toUpperCase() ?? 'TCGPLAYER',
+                        style: const TextStyle(
                           fontSize: 10,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.goldSoft,
                         ),
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  mainPriceFormatted,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.gold,
+                    letterSpacing: -0.5,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+                // Tombol Secondary Konversi Harga (Outline)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.gold,
+                      side: const BorderSide(color: AppColors.gold, width: 1.2),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      context.push(
+                        '/converter',
+                        extra: {
+                          'initialAmount': convertedPrice,
+                          'initialCurrency': selectedCurrency.code,
+                          'cardName': card.name,
+                        },
+                      );
+                    },
+                    icon: const Icon(Icons.currency_exchange, size: 18),
+                    label: const Text(
+                      'Konversi Harga',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -650,7 +550,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           child: FilledButton.icon(
             icon: const Icon(Icons.auto_awesome, color: AppColors.onGold, size: 20),
             label: const Text(
-              'AI Penasihat Kartu (Gemini)',
+              'Tanya HoloBot',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
             ),
             style: FilledButton.styleFrom(

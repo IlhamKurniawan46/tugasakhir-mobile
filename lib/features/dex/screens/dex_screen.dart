@@ -762,10 +762,10 @@ class _DexScreenState extends ConsumerState<DexScreen> {
             final textScaler = MediaQuery.textScalerOf(context);
             final estimatedTitleWidth = textScaler.scale(90.0);
             final estimatedChipsWidth =
-                AppCurrency.values.length * textScaler.scale(46.0) +
-                    (AppCurrency.values.length - 1) * 6.0;
+                AppCurrency.values.length * textScaler.scale(42.0) +
+                    (AppCurrency.values.length - 1) * 5.0;
             final isSingleLine = constraints.maxWidth >=
-                (estimatedTitleWidth + estimatedChipsWidth + 12.0);
+                (estimatedTitleWidth + estimatedChipsWidth + 10.0);
 
             final titleWidget = Semantics(
               header: true,
@@ -818,14 +818,14 @@ class _DexScreenState extends ConsumerState<DexScreen> {
     );
   }
 
-  /// Chip Mata Uang Mode Kompak (Mengikuti isi teks, tinggi visual 32-36dp, tap target >= 48dp)
+  /// Chip Mata Uang Mode Kompak (Ukuran seragam untuk semua mata uang, tinggi visual kompak, tap target >= 48dp)
   Widget _buildCompactCurrencyChips(AppCurrency selectedCurrency) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: AppCurrency.values.map((currency) {
         final isSelected = selectedCurrency == currency;
         return Padding(
-          padding: const EdgeInsets.only(left: 6),
+          padding: const EdgeInsets.only(left: 5),
           child: _buildCurrencyChipItem(currency, isSelected),
         );
       }).toList(),
@@ -839,7 +839,7 @@ class _DexScreenState extends ConsumerState<DexScreen> {
         final isSelected = selectedCurrency == currency;
         return Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2.5),
+            padding: const EdgeInsets.symmetric(horizontal: 2.0),
             child: _buildCurrencyChipItem(currency, isSelected, isExpanded: true),
           ),
         );
@@ -847,7 +847,7 @@ class _DexScreenState extends ConsumerState<DexScreen> {
     );
   }
 
-  /// Item Chip Mata Uang Tunggal
+  /// Item Chip Mata Uang Tunggal (Ukuran seragam & kompak)
   Widget _buildCurrencyChipItem(
     AppCurrency currency,
     bool isSelected, {
@@ -866,9 +866,14 @@ class _DexScreenState extends ConsumerState<DexScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
               )
-            : Text(
-                currency.code,
-                maxLines: 1,
+            : SizedBox(
+                width: 34,
+                child: Center(
+                  child: Text(
+                    currency.code,
+                    maxLines: 1,
+                  ),
+                ),
               ),
         selected: isSelected,
         showCheckmark: false,
@@ -878,18 +883,19 @@ class _DexScreenState extends ConsumerState<DexScreen> {
         selectedColor: AppColors.gold,
         backgroundColor: AppColors.surface,
         labelStyle: TextStyle(
-          fontSize: 11,
+          fontSize: 10.5,
           fontWeight: FontWeight.w700,
           color: isSelected ? AppColors.onGold : AppColors.onSurfaceVariant,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+        labelPadding: EdgeInsets.zero,
         visualDensity: VisualDensity.compact,
         materialTapTargetSize: MaterialTapTargetSize.padded,
         side: BorderSide(
           color: isSelected ? AppColors.gold : AppColors.surfaceHigh,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
         ),
       ),
     );

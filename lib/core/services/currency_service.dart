@@ -7,9 +7,11 @@ import '../constants/app_constants.dart';
 import '../database/local_db.dart';
 
 /// Data hasil pembacaan kurs ECB (Frankfurter API)
+/// Data hasil pembacaan kurs ECB (Frankfurter API)
 class CurrencyRates {
   final double usdToIdr;
   final double usdToEur;
+  final double? usdToJpy;
   final String? ecbDate;
   final DateTime? updatedAt;
   final bool isFromCache;
@@ -17,6 +19,7 @@ class CurrencyRates {
   const CurrencyRates({
     required this.usdToIdr,
     required this.usdToEur,
+    this.usdToJpy,
     this.ecbDate,
     this.updatedAt,
     this.isFromCache = false,
@@ -28,23 +31,33 @@ class CurrencyRates {
     return DateTime.now().difference(updatedAt!) > const Duration(hours: 24);
   }
 
+  /// Apakah kurs JPY tersedia dan valid
+  bool get hasJpy => usdToJpy != null && usdToJpy! > 0;
+
   /// 1 EUR dalam USD = 1 / usdToEur
   double get eurToUsd => usdToEur > 0 ? (1.0 / usdToEur) : 0;
 
   /// 1 EUR dalam IDR = (1 / usdToEur) * usdToIdr
   double get eurToIdr => usdToEur > 0 ? ((1.0 / usdToEur) * usdToIdr) : 0;
 
+  /// 1 EUR dalam JPY = (1 / usdToEur) * usdToJpy
+  double? get eurToJpy =>
+      (usdToEur > 0 && hasJpy) ? ((1.0 / usdToEur) * usdToJpy!) : null;
+
   /// 10.000 IDR dalam USD
   double get idrToUsd => usdToIdr > 0 ? (1.0 / usdToIdr) : 0;
+
+  /// 1 JPY dalam USD
+  double? get jpyToUsd => hasJpy ? (1.0 / usdToJpy!) : null;
 }
 
 /// Mengelola kurs mata uang real-time (Frankfurter API) dengan cache SQLite 24 jam.
-/// Mendukung konversi dinamis 3 mata uang: USD, EUR, IDR (semua arah).
+/// Mendukung konversi dinamis 4 mata uang: USD, EUR, IDR, JPY (semua arah).
 class CurrencyService {
   static const String _primaryUrl =
-      '${AppConstants.frankfurterBaseUrl}/v1/latest?from=USD&to=EUR,IDR';
+      '${AppConstants.frankfurterBaseUrl}/v1/latest?from=USD&to=EUR,IDR,JPY';
   static const String _fallbackUrl =
-      '${AppConstants.frankfurterBaseUrl}/latest?from=USD&to=EUR,IDR';
+      '${AppConstants.frankfurterBaseUrl}/latest?from=USD&to=EUR,IDR,JPY';
 
   // Nilai kurs saat ini dalam memori
   static CurrencyRates? _currentRates;
@@ -63,15 +76,15 @@ class CurrencyService {
 
   /// Inisialisasi kurs saat aplikasi mulai:
   /// 1. Muat dari SQLite cache terlebih dahulu agar instan (offline-first).
-  /// 2. Jika cache kosong atau sudah > 24 jam, segarkan dari API di background.
+  /// 2. Jika cache kosong, sudah > 24 jam, atau belum memuat JPY, segarkan dari API.
   static Future<void> initRates() async {
     if (_isInitialized) return;
 
     // 1. Muat cache dari SQLite
     await _loadFromCache();
 
-    // 2. Jika belum ada data atau cache sudah kedaluwarsa (> 24 jam), refresh
-    if (_currentRates == null || _currentRates!.isExpired) {
+    // 2. Jika belum ada data, cache kedaluwarsa (> 24 jam), atau JPY belum ada di cache lama
+    if (_currentRates == null || _currentRates!.isExpired || _currentRates!.usdToJpy == null) {
       try {
         await refreshRates();
       } catch (e) {
@@ -82,8 +95,9 @@ class CurrencyService {
     _isInitialized = true;
   }
 
-  /// Konversi antar 3 mata uang (USD, EUR, IDR).
-  /// Mengembalikan null jika kurs belum pernah dimuat atau mata uang tidak dikenal.
+  /// Konversi antar 4 mata uang (USD, EUR, IDR, JPY) melalui satu basis konsisten (USD).
+  /// Mengembalikan null jika kurs belum pernah dimuat, mata uang tidak dikenal,
+  /// atau kurs spesifik (mis. JPY pada cache lama) belum tersedia.
   static double? convert(
     num? amount, {
     required String from,
@@ -99,22 +113,33 @@ class CurrencyService {
     final rates = _currentRates!;
     final double value = amount.toDouble();
 
-    // Dari USD
+    // 1. Konversi nilai asal ke basis USD
+    double amountInUsd;
     if (cleanFrom == 'USD') {
-      if (cleanTo == 'IDR') return value * rates.usdToIdr;
-      if (cleanTo == 'EUR') return value * rates.usdToEur;
+      amountInUsd = value;
+    } else if (cleanFrom == 'IDR') {
+      if (rates.usdToIdr <= 0) return null;
+      amountInUsd = value / rates.usdToIdr;
+    } else if (cleanFrom == 'EUR') {
+      if (rates.usdToEur <= 0) return null;
+      amountInUsd = value / rates.usdToEur;
+    } else if (cleanFrom == 'JPY') {
+      if (rates.usdToJpy == null || rates.usdToJpy! <= 0) return null;
+      amountInUsd = value / rates.usdToJpy!;
+    } else {
+      return null;
     }
 
-    // Dari IDR
-    if (cleanFrom == 'IDR') {
-      if (cleanTo == 'USD') return value / rates.usdToIdr;
-      if (cleanTo == 'EUR') return (value / rates.usdToIdr) * rates.usdToEur;
-    }
-
-    // Dari EUR
-    if (cleanFrom == 'EUR') {
-      if (cleanTo == 'USD') return value / rates.usdToEur;
-      if (cleanTo == 'IDR') return (value / rates.usdToEur) * rates.usdToIdr;
+    // 2. Konversi dari basis USD ke mata uang tujuan
+    if (cleanTo == 'USD') {
+      return amountInUsd;
+    } else if (cleanTo == 'IDR') {
+      return amountInUsd * rates.usdToIdr;
+    } else if (cleanTo == 'EUR') {
+      return amountInUsd * rates.usdToEur;
+    } else if (cleanTo == 'JPY') {
+      if (rates.usdToJpy == null || rates.usdToJpy! <= 0) return null;
+      return amountInUsd * rates.usdToJpy!;
     }
 
     return null;
@@ -146,6 +171,7 @@ class CurrencyService {
           final rates = data['rates'] as Map<String, dynamic>;
           final idr = (rates['IDR'] as num).toDouble();
           final eur = (rates['EUR'] as num).toDouble();
+          final jpy = (rates['JPY'] as num?)?.toDouble();
           final ecbDate = data['date'] as String?;
           final now = DateTime.now();
 
@@ -153,13 +179,20 @@ class CurrencyService {
             _currentRates = CurrencyRates(
               usdToIdr: idr,
               usdToEur: eur,
+              usdToJpy: jpy,
               ecbDate: ecbDate,
               updatedAt: now,
               isFromCache: false,
             );
 
             // Simpan ke SQLite
-            await _saveToCache(idr: idr, eur: eur, ecbDate: ecbDate, now: now);
+            await _saveToCache(
+              idr: idr,
+              eur: eur,
+              jpy: jpy,
+              ecbDate: ecbDate,
+              now: now,
+            );
             return true;
           }
         }
@@ -186,6 +219,7 @@ class CurrencyService {
 
       double? idr;
       double? eur;
+      double? jpy;
       String? ecbDate;
       int? updatedTimestamp;
 
@@ -196,6 +230,8 @@ class CurrencyService {
           idr = rate;
         } else if (target == 'EUR' && rate > 0) {
           eur = rate;
+        } else if (target == 'JPY' && rate > 0) {
+          jpy = rate;
         }
 
         if (row['ecb_date'] != null) {
@@ -210,6 +246,7 @@ class CurrencyService {
         _currentRates = CurrencyRates(
           usdToIdr: idr,
           usdToEur: eur,
+          usdToJpy: jpy,
           ecbDate: ecbDate,
           updatedAt: updatedTimestamp != null
               ? DateTime.fromMillisecondsSinceEpoch(updatedTimestamp)
@@ -225,6 +262,7 @@ class CurrencyService {
   static Future<void> _saveToCache({
     required double idr,
     required double eur,
+    double? jpy,
     String? ecbDate,
     required DateTime now,
   }) async {
@@ -255,6 +293,19 @@ class CurrencyService {
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
+      if (jpy != null && jpy > 0) {
+        batch.insert(
+          'currency_cache',
+          {
+            'base': 'USD',
+            'target': 'JPY',
+            'rate': jpy,
+            'ecb_date': ecbDate,
+            'updated_at': nowMs,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
       await batch.commit(noResult: true);
     } catch (e) {
       debugPrint('[HoloDex Error] Gagal menyimpan cache kurs ke SQLite: $e');

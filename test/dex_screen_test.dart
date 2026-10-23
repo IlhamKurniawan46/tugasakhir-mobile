@@ -30,6 +30,7 @@ void main() {
     CurrencyService.setMockRates(const CurrencyRates(
       usdToEur: 0.92,
       usdToIdr: 16000.0,
+      usdToJpy: 155.0,
       ecbDate: '2026-10-23',
     ));
   });
@@ -98,11 +99,12 @@ void main() {
       expect(find.text('HoloDex'), findsOneWidget);
       expect(find.byIcon(Icons.tune), findsOneWidget);
 
-      // Verifikasi judul section "Katalog" & chip mata uang
+      // Verifikasi judul section "Katalog" & 4 chip mata uang
       expect(find.text('Katalog'), findsOneWidget);
       expect(find.text('IDR'), findsOneWidget);
       expect(find.text('USD'), findsOneWidget);
       expect(find.text('EUR'), findsOneWidget);
+      expect(find.text('JPY'), findsOneWidget);
 
       // Verifikasi 4 Baris Fitur Baru
       expect(find.text('Event'), findsOneWidget);
@@ -236,15 +238,15 @@ void main() {
       final catalogTopLeft = tester.getTopLeft(catalogTitle);
       expect(catalogTopLeft.dx, equals(kScreenHorizontalPadding));
 
-      // 4. Chip terakhir (EUR) rata kanan dengan batas 360 - 16 = 344
-      final eurChip = find.text('EUR');
-      final eurChipRight = tester.getTopRight(eurChip);
-      expect(eurChipRight.dx, lessThanOrEqualTo(360.0 - kScreenHorizontalPadding));
+      // 4. Chip terakhir (JPY) rata kanan dengan batas 360 - 16 = 344
+      final jpyChip = find.text('JPY');
+      final jpyChipRight = tester.getTopRight(jpyChip);
+      expect(jpyChipRight.dx, lessThanOrEqualTo(360.0 - kScreenHorizontalPadding));
     },
   );
 
   testWidgets(
-    '(d) Mengetuk chip mata uang mengganti mata uang terpilih',
+    '(d) Mengetuk chip mata uang mengganti mata uang terpilih (USD dan JPY)',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -265,8 +267,15 @@ void main() {
       // Ketuk USD
       await tester.tap(find.text('USD'));
       await tester.pumpAndSettle();
-
       expect(tester.takeException(), isNull);
+
+      // Ketuk JPY
+      await tester.tap(find.text('JPY'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      // Pastikan ada format simbol Yen '¥' yang muncul pada badge harga
+      expect(find.textContaining('¥'), findsWidgets);
     },
   );
 

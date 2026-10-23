@@ -37,7 +37,7 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
         to: selectedCurrency.code,
       );
       if (converted != null) {
-        controller.text = selectedCurrency == AppCurrency.idr
+        controller.text = (selectedCurrency == AppCurrency.idr || selectedCurrency == AppCurrency.jpy)
             ? converted.round().toString()
             : converted.toStringAsFixed(2);
       }
@@ -72,8 +72,8 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
               decoration: InputDecoration(
                 prefixText: '${selectedCurrency.symbol} ',
                 labelText: 'Harga Target (${selectedCurrency.code})',
-                hintText: selectedCurrency == AppCurrency.idr
-                    ? 'Contoh: 150000'
+                hintText: (selectedCurrency == AppCurrency.idr || selectedCurrency == AppCurrency.jpy)
+                    ? (selectedCurrency == AppCurrency.idr ? 'Contoh: 150000' : 'Contoh: 1500')
                     : 'Contoh: 12.50',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),

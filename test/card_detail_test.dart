@@ -107,6 +107,11 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Charizard ex #199'), findsOneWidget);
       expect(find.text('AI Penasihat Kartu (Gemini)'), findsOneWidget);
+
+      // Verifikasi tombol primary "Konversi Harga" tampil dan box TCGplayer/Cardmarket sudah dihapus
+      expect(find.text('Konversi Harga'), findsOneWidget);
+      expect(find.text('TCGplayer (USD)'), findsNothing);
+      expect(find.text('Cardmarket (EUR)'), findsNothing);
     });
 
     testWidgets('Watchlist SnackBar builds without overflow on 320dp with fontScale 1.3',

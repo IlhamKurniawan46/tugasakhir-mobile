@@ -21,7 +21,12 @@ class PriceFormatter {
     'en_US',
   );
 
-  /// Format angka sesuai kode mata uang ('IDR', 'USD', 'EUR').
+  static final NumberFormat _jpyNumberFormatter = NumberFormat(
+    '#,##0',
+    'ja_JP',
+  );
+
+  /// Format angka sesuai kode mata uang ('IDR', 'USD', 'EUR', 'JPY').
   /// Mengembalikan '-' jika nilainya null.
   static String format(
     num? value,
@@ -51,6 +56,10 @@ class PriceFormatter {
         final formatted = _eurNumberFormatter.format(value);
         return showSymbol ? '€$formatted' : formatted;
 
+      case 'JPY':
+        final formatted = _jpyNumberFormatter.format(value.round());
+        return showSymbol ? '¥$formatted' : formatted;
+
       default:
         return value.toStringAsFixed(2);
     }
@@ -64,6 +73,9 @@ class PriceFormatter {
 
   /// Format angka ke EUR dengan 2 desimal, contoh: 18.2 -> "€18.20".
   static String formatEur(num? value) => format(value, 'EUR');
+
+  /// Format angka ke JPY tanpa desimal, contoh: 1570 -> "¥1.570".
+  static String formatJpy(num? value) => format(value, 'JPY');
 }
 
 /// Format angka ke Rupiah tanpa desimal, contoh: 100000 -> "Rp100.000".
@@ -79,4 +91,9 @@ String formatUsd(num? value) {
 /// Format angka ke EUR dengan 2 desimal, contoh: 18.2 -> "€18.20".
 String formatEur(num? value) {
   return PriceFormatter.format(value, 'EUR');
+}
+
+/// Format angka ke JPY tanpa desimal, contoh: 1570 -> "¥1.570".
+String formatJpy(num? value) {
+  return PriceFormatter.format(value, 'JPY');
 }
