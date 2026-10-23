@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/models/card_model.dart';
 import '../../../core/models/watchlist_item_model.dart';
 import '../../../core/services/currency_service.dart';
 import '../../../core/utils/price_formatter.dart';
@@ -18,6 +19,15 @@ class WatchlistScreen extends ConsumerStatefulWidget {
 }
 
 class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
+  DateTime _lastCardTap = DateTime.fromMillisecondsSinceEpoch(0);
+
+  void _openCardDetail(CardModel? card, String cardId) {
+    final now = DateTime.now();
+    if (now.difference(_lastCardTap).inMilliseconds < 600) return;
+    _lastCardTap = now;
+    context.push('/dex/card/$cardId', extra: card);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -279,9 +289,7 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
           ),
         ),
         child: InkWell(
-          onTap: () {
-            context.push('/dex/card/${card?.id ?? item.cardId}', extra: card);
-          },
+          onTap: () => _openCardDetail(card, card?.id ?? item.cardId),
           borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           child: Padding(
             padding: const EdgeInsets.all(12),

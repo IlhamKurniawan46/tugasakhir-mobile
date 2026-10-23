@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../app/theme.dart';
 import '../../../core/models/transaction_model.dart';
 import '../../../core/utils/price_formatter.dart';
+import '../../../shared/widgets/blockchain_verification_dialog.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/marketplace_provider.dart';
 
@@ -303,6 +304,40 @@ class _TransactionHistoryScreenState
                           ),
                         ],
                       ),
+                      if (item.txHash != null && item.txHash!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        InkWell(
+                          onTap: () {
+                            BlockchainVerificationDialog.show(
+                              context,
+                              txHash: item.txHash!,
+                              tokenId: item.tokenId,
+                              cardName: card?.name,
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(4),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.verified, size: 12, color: AppColors.cyan),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'On-Chain: ${item.shortTxHash}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.cyan,
+                                    fontFamily: 'monospace',
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const Spacer(),
+                                const Icon(Icons.qr_code, size: 14, color: AppColors.gold),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

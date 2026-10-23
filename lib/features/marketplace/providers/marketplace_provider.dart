@@ -1,9 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
+import '../../../core/models/card_certificate_model.dart';
 import '../../../core/models/listing_model.dart';
 import '../../../core/models/transaction_model.dart';
+import '../../../core/services/blockchain_repository.dart';
 import '../../../core/services/marketplace_repository.dart';
+import '../../../core/services/web3_blockchain_service.dart';
+import '../../../core/utils/env_loader.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profile/providers/collection_provider.dart';
 
@@ -151,10 +156,11 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
     );
   }
 
-  /// Membeli listing secara atomik
-  Future<bool> buyListing({
+  /// Membeli listing secara atomik & memicu pencatatan sertifikat on-chain di Polygon Amoy
+  Future<Map<String, dynamic>> buyListing({
     required String listingId,
     required String buyerId,
+    String? cardName,
   }) async {
     try {
       final result = await MarketplaceRepository.buyListing(
@@ -185,7 +191,54 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
       // Invalidate transaksi provider agar riwayat terbarui
       ref.invalidate(userTransactionsProvider(buyerId));
 
-      return true;
+      // 4. Proses Sertifikat Keaslian On-Chain di Polygon Amoy
+      final cardId = result['card_id'] as String? ?? '';
+      final priceIdr = (result['price_idr'] as num?)?.toDouble() ?? 0;
+      final txId = result['transaction_id']?.toString() ?? '';
+
+      String? onChainTxHash;
+      final tokenId = DateTime.now().millisecondsSinceEpoch.remainder(1000000).toString();
+      final user = ref.read(authProvider).user;
+
+      try {
+        // Panggil minting on-chain via Web3 service
+        onChainTxHash = await Web3BlockchainService.instance.mintCertificate(
+          cardId: cardId,
+          cardName: cardName ?? 'Pokémon Card',
+        );
+      } catch (e) {
+        debugPrint('[HoloDex Web3] Minting on-chain dilewati/tertunda: $e');
+      }
+
+      // Simpan riwayat provenance sertifikat kartu jika ada transaksi
+      if (cardId.isNotEmpty && onChainTxHash != null && onChainTxHash.isNotEmpty) {
+        final cert = CardCertificateModel(
+          id: txId.isNotEmpty ? txId : 'cert-${DateTime.now().millisecondsSinceEpoch}',
+          cardId: cardId,
+          tokenId: tokenId,
+          contractAddress: EnvLoader.blockchainContractAddress.isNotEmpty
+              ? EnvLoader.blockchainContractAddress
+              : '0xAmoyHoloDexProvenance',
+          txHash: onChainTxHash,
+          fromAddress: '0x0000000000000000000000000000000000000000',
+          toAddress: Web3BlockchainService.instance.operatorAddress != null
+              ? '0x${Web3BlockchainService.instance.operatorAddress}'
+              : '0x${buyerId.replaceAll('-', '').padRight(40, '0').substring(0, 40)}',
+          ownerUsername: user?.username ?? 'Buyer',
+          action: 'transferred',
+          priceIdr: priceIdr,
+          notes: 'Marketplace Purchase #$listingId',
+          createdAt: DateTime.now(),
+        );
+
+        await BlockchainRepository.saveCertificateRecord(cert);
+      }
+
+      return {
+        ...result,
+        'tx_hash': onChainTxHash,
+        'token_id': tokenId,
+      };
     } catch (e) {
       rethrow;
     }

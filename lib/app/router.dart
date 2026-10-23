@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/services/notification_service.dart';
@@ -25,7 +25,11 @@ import '../features/pack_opening/screens/pack_opening_screen.dart';
 import '../features/saran_kesan/screens/saran_kesan_screen.dart';
 import '../shared/widgets/bottom_nav_shell.dart';
 
+final GlobalKey<NavigatorState> rootNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'root');
+
 final GoRouter appRouter = GoRouter(
+  navigatorKey: rootNavigatorKey,
   initialLocation: '/splash',
   routes: [
     GoRoute(
@@ -71,9 +75,34 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const WatchlistScreen(),
     ),
     GoRoute(
+      path: '/profile/collection',
+      redirect: (context, state) => '/collection',
+    ),
+    GoRoute(
+      path: '/profile/watchlist',
+      redirect: (context, state) => '/watchlist',
+    ),
+    GoRoute(
       path: '/pack-opening',
       name: 'pack-opening',
       builder: (context, state) => const PackOpeningScreen(),
+    ),
+    // Detail Kartu di root navigator (layar penuh, bebas tabrakan shell branch & double-tap)
+    GoRoute(
+      path: '/dex/card/:id',
+      name: 'card-detail',
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final cardId = state.pathParameters['id'] ?? '';
+        final initialCard = state.extra as CardModel?;
+        return MaterialPage(
+          key: ValueKey('card_${cardId}_${DateTime.now().microsecondsSinceEpoch}'),
+          child: CardDetailScreen(
+            cardId: cardId,
+            initialCard: initialCard,
+          ),
+        );
+      },
     ),
     // Shell 5 tab (Dex, Pasar, Profil, Saran & Logout)
     StatefulShellRoute.indexedStack(
@@ -93,18 +122,6 @@ final GoRouter appRouter = GoRouter(
                   path: 'search',
                   name: 'search',
                   builder: (context, state) => const SearchScreen(),
-                ),
-                GoRoute(
-                  path: 'card/:id',
-                  name: 'card-detail',
-                  builder: (context, state) {
-                    final cardId = state.pathParameters['id'] ?? '';
-                    final initialCard = state.extra as CardModel?;
-                    return CardDetailScreen(
-                      cardId: cardId,
-                      initialCard: initialCard,
-                    );
-                  },
                 ),
               ],
             ),
@@ -194,7 +211,7 @@ void setupNotificationNavigation() {
       } else if (type == 'calendar') {
         appRouter.push('/calendar');
       } else if (type == 'card_detail' && data['cardId'] != null) {
-        appRouter.push('/dex/${data['cardId']}');
+        appRouter.push('/dex/card/${data['cardId']}');
       } else if (type == 'marketplace') {
         appRouter.push('/marketplace/transactions');
       }

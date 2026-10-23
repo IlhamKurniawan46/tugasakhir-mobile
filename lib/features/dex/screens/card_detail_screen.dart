@@ -7,6 +7,7 @@ import '../../../core/models/card_model.dart';
 import '../../../shared/providers/currency_provider.dart';
 import '../providers/card_detail_provider.dart';
 import '../widgets/holo_card_widget.dart';
+import '../widgets/provenance_timeline_widget.dart';
 import '../../ai/widgets/ai_advisor_sheet.dart';
 
 class CardDetailScreen extends ConsumerStatefulWidget {
@@ -468,9 +469,14 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             ),
           ),
 
+          const SizedBox(height: 16),
+
+          // 6. Sertifikat Keaslian & Riwayat Kepemilikan (Provenance on Polygon Amoy)
+          ProvenanceTimelineWidget(card: card),
+
           const SizedBox(height: 20),
 
-          // 5. Action Buttons (AI Penasihat & Tambah Koleksi)
+          // 7. Action Buttons (AI Penasihat & Tambah Koleksi)
           _buildActionButtons(card, detailState, mainPriceFormatted),
         ],
       ),
@@ -533,7 +539,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Kartu ini ada di Koleksi Saya (Diperoleh dari Pasar)',
+                    'Kartu ini ada di Koleksi (Diperoleh dari Pasar)',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,

@@ -61,6 +61,41 @@ class LocalDb {
         print('[HoloDex Error] Gagal migrasi SQLite v4: $e');
       }
     }
+    if (oldVersion < 5) {
+      try {
+        await db.execute('ALTER TABLE transactions ADD COLUMN tx_hash TEXT');
+        await db.execute('ALTER TABLE transactions ADD COLUMN token_id TEXT');
+        await db.execute('ALTER TABLE transactions ADD COLUMN contract_address TEXT');
+        await db.execute("ALTER TABLE transactions ADD COLUMN blockchain_status TEXT DEFAULT 'confirmed'");
+
+        await db.execute('ALTER TABLE collection ADD COLUMN tx_hash TEXT');
+        await db.execute('ALTER TABLE collection ADD COLUMN token_id TEXT');
+        await db.execute('ALTER TABLE collection ADD COLUMN contract_address TEXT');
+
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS card_certificates (
+            id TEXT PRIMARY KEY,
+            card_id TEXT NOT NULL,
+            token_id TEXT NOT NULL,
+            contract_address TEXT NOT NULL,
+            tx_hash TEXT NOT NULL,
+            from_address TEXT,
+            to_address TEXT NOT NULL,
+            owner_username TEXT,
+            action TEXT DEFAULT 'minted',
+            price_idr REAL DEFAULT 0,
+            notes TEXT,
+            block_number INTEGER,
+            created_at INTEGER
+          )
+        ''');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_cert_card_id ON card_certificates(card_id)');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_cert_token_id ON card_certificates(token_id)');
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_cert_tx_hash ON card_certificates(tx_hash)');
+      } catch (e) {
+        print('[HoloDex Error] Gagal migrasi SQLite v5: $e');
+      }
+    }
   }
 
   static Future<void> _onCreate(Database db, int version) async {
@@ -214,8 +249,30 @@ class LocalDb {
       )
     ''');
 
+    // 12. Sertifikat blockchain & riwayat kepemilikan lokal
+    batch.execute('''
+      CREATE TABLE card_certificates (
+        id TEXT PRIMARY KEY,
+        card_id TEXT NOT NULL,
+        token_id TEXT NOT NULL,
+        contract_address TEXT NOT NULL,
+        tx_hash TEXT NOT NULL,
+        from_address TEXT,
+        to_address TEXT NOT NULL,
+        owner_username TEXT,
+        action TEXT DEFAULT 'minted',
+        price_idr REAL DEFAULT 0,
+        notes TEXT,
+        block_number INTEGER,
+        created_at INTEGER
+      )
+    ''');
+    batch.execute('CREATE INDEX idx_cert_card_id ON card_certificates(card_id)');
+    batch.execute('CREATE INDEX idx_cert_token_id ON card_certificates(token_id)');
+    batch.execute('CREATE INDEX idx_cert_tx_hash ON card_certificates(tx_hash)');
+
     await batch.commit(noResult: true);
-    print('[HoloDex] SQLite initialized - semua 11 tabel lokal berhasil dibuat');
+    print('[HoloDex] SQLite initialized - semua 12 tabel lokal berhasil dibuat');
   }
 
   static Future<void> close() async {

@@ -29,6 +29,37 @@ class EnvLoader {
     return (dotenv.env['GEMINI_API_KEY'] ?? '').trim();
   }
 
+  // Blockchain Configuration (Polygon Amoy Testnet)
+  static String get polygonRpcUrl {
+    if (!dotenv.isInitialized) return 'https://polygon-amoy-bor-rpc.publicnode.com';
+    final url = dotenv.env['POLYGON_AMOY_RPC_URL']?.trim();
+    return (url != null && url.isNotEmpty)
+        ? url
+        : 'https://polygon-amoy-bor-rpc.publicnode.com';
+  }
+
+  static int get polygonChainId {
+    if (!dotenv.isInitialized) return 80002;
+    final val = int.tryParse(dotenv.env['POLYGON_CHAIN_ID'] ?? '');
+    return val ?? 80002;
+  }
+
+  static String get blockchainContractAddress {
+    if (!dotenv.isInitialized) return '';
+    return (dotenv.env['BLOCKCHAIN_CONTRACT_ADDRESS'] ?? '').trim();
+  }
+
+  static String get blockchainOperatorPrivateKey {
+    if (!dotenv.isInitialized) return '';
+    return (dotenv.env['BLOCKCHAIN_OPERATOR_PRIVATE_KEY'] ?? '').trim();
+  }
+
+  static String get polygonExplorerBaseUrl {
+    if (!dotenv.isInitialized) return 'https://amoy.polygonscan.com';
+    final url = dotenv.env['POLYGON_EXPLORER_BASE_URL']?.trim();
+    return (url != null && url.isNotEmpty) ? url : 'https://amoy.polygonscan.com';
+  }
+
   static bool get isSupabaseConfigured =>
       supabaseUrl.isNotEmpty &&
       !supabaseUrl.contains('your-project') &&

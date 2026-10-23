@@ -9,8 +9,10 @@ import 'dart:convert';
 import '../../../core/services/currency_service.dart';
 import '../../../core/services/marketplace_repository.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/services/web3_blockchain_service.dart';
 import '../../../core/utils/price_formatter.dart';
 import '../../../shared/providers/currency_provider.dart';
+import '../../../shared/widgets/blockchain_verification_dialog.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/marketplace_provider.dart';
 
@@ -229,10 +231,14 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     setState(() => _isPurchasing = true);
 
     try {
-      await ref.read(marketplaceProvider.notifier).buyListing(
+      final buyResult = await ref.read(marketplaceProvider.notifier).buyListing(
             listingId: listing.id,
             buyerId: user.id,
+            cardName: listing.card?.name,
           );
+
+      final onChainTxHash = buyResult['tx_hash'] as String?;
+      final tokenId = buyResult['token_id'] as String?;
 
       if (mounted) {
         setState(() {
@@ -250,7 +256,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
           payload: jsonEncode({'type': 'collection'}),
         );
 
-        // Dialog Berhasil
+        // Dialog Berhasil & Sertifikat Blockchain
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -275,9 +281,80 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 ),
               ],
             ),
-            content: Text(
-              'Kartu ${listing.card?.name ?? ''} telah resmi Anda miliki dan tersimpan di Koleksi Saya.',
-              style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Kartu ${listing.card?.name ?? ''} telah resmi Anda miliki dan tersimpan di Koleksi Saya.',
+                  style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                ),
+                if (onChainTxHash != null && onChainTxHash.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.cyan.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.cyan.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.verified, size: 16, color: AppColors.cyan),
+                            SizedBox(width: 6),
+                            Text(
+                              'Tercatat di Polygon Amoy',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.cyan,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tx: ${Web3BlockchainService.instance.formatShortHash(onChainTxHash)}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                            color: AppColors.cyan,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.gold,
+                              side: const BorderSide(color: AppColors.gold, width: 1),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                            onPressed: () {
+                              BlockchainVerificationDialog.show(
+                                context,
+                                txHash: onChainTxHash,
+                                tokenId: tokenId,
+                                cardName: listing.card?.name,
+                              );
+                            },
+                            icon: const Icon(Icons.qr_code, size: 16),
+                            label: const Text(
+                              'Lihat QR & PolygonScan',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
             ),
             actionsOverflowButtonSpacing: 8,
             actionsAlignment: MainAxisAlignment.end,
@@ -298,7 +375,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 onPressed: () {
                   Navigator.pop(ctx);
                   context.pop();
-                  context.push('/profile/collection');
+                  context.push('/collection');
                 },
                 child: const Text('Lihat Koleksi'),
               ),

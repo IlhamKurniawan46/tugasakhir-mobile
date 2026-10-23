@@ -10,6 +10,10 @@ class TransactionModel {
   final String cardId;
   final double priceIdr;
   final DateTime? createdAt;
+  final String? txHash;
+  final String? tokenId;
+  final String? contractAddress;
+  final String? blockchainStatus;
 
   // Joined fields
   final CardModel? card;
@@ -25,11 +29,22 @@ class TransactionModel {
     required this.cardId,
     required this.priceIdr,
     this.createdAt,
+    this.txHash,
+    this.tokenId,
+    this.contractAddress,
+    this.blockchainStatus = 'confirmed',
     this.card,
     this.buyerUsername,
     this.sellerUsername,
     this.isBuyer = true,
   });
+
+  /// Potongan TxHash untuk tampilan mobile
+  String? get shortTxHash {
+    if (txHash == null || txHash!.isEmpty) return null;
+    if (txHash!.length <= 12) return txHash;
+    return '${txHash!.substring(0, 6)}...${txHash!.substring(txHash!.length - 4)}';
+  }
 
   TransactionModel copyWith({
     String? id,
@@ -39,6 +54,10 @@ class TransactionModel {
     String? cardId,
     double? priceIdr,
     DateTime? createdAt,
+    String? txHash,
+    String? tokenId,
+    String? contractAddress,
+    String? blockchainStatus,
     CardModel? card,
     String? buyerUsername,
     String? sellerUsername,
@@ -52,6 +71,10 @@ class TransactionModel {
         cardId: cardId ?? this.cardId,
         priceIdr: priceIdr ?? this.priceIdr,
         createdAt: createdAt ?? this.createdAt,
+        txHash: txHash ?? this.txHash,
+        tokenId: tokenId ?? this.tokenId,
+        contractAddress: contractAddress ?? this.contractAddress,
+        blockchainStatus: blockchainStatus ?? this.blockchainStatus,
         card: card ?? this.card,
         buyerUsername: buyerUsername ?? this.buyerUsername,
         sellerUsername: sellerUsername ?? this.sellerUsername,
@@ -69,6 +92,10 @@ class TransactionModel {
         createdAt: json['created_at'] != null
             ? DateTime.tryParse(json['created_at'].toString())
             : null,
+        txHash: json['tx_hash'] as String?,
+        tokenId: json['token_id'] as String?,
+        contractAddress: json['contract_address'] as String?,
+        blockchainStatus: json['blockchain_status'] as String? ?? 'confirmed',
         card: json['card'] != null
             ? CardModel.fromJson(Map<String, dynamic>.from(json['card'] as Map))
             : null,
@@ -85,6 +112,10 @@ class TransactionModel {
         'card_id': cardId,
         'price_idr': priceIdr,
         'created_at': createdAt?.toIso8601String(),
+        if (txHash != null) 'tx_hash': txHash,
+        if (tokenId != null) 'token_id': tokenId,
+        if (contractAddress != null) 'contract_address': contractAddress,
+        if (blockchainStatus != null) 'blockchain_status': blockchainStatus,
         if (card != null) 'card': card!.toJson(),
         if (buyerUsername != null) 'buyer_username': buyerUsername,
         if (sellerUsername != null) 'seller_username': sellerUsername,

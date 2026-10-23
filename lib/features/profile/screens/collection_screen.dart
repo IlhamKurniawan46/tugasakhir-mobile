@@ -17,6 +17,15 @@ class CollectionScreen extends ConsumerStatefulWidget {
 }
 
 class _CollectionScreenState extends ConsumerState<CollectionScreen> {
+  DateTime _lastCardTap = DateTime.fromMillisecondsSinceEpoch(0);
+
+  void _openCardDetail(CardModel? card, String fallbackCardId) {
+    final now = DateTime.now();
+    if (now.difference(_lastCardTap).inMilliseconds < 600) return;
+    _lastCardTap = now;
+    context.push('/dex/card/${card?.id ?? fallbackCardId}', extra: card);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -286,9 +295,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         : '-';
 
     return InkWell(
-      onTap: () {
-        context.push('/dex/card/${card?.id ?? fallbackCardId}', extra: card);
-      },
+      onTap: () => _openCardDetail(card, fallbackCardId),
       borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       child: Container(
         decoration: BoxDecoration(
