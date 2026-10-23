@@ -86,9 +86,10 @@ void main() {
 
     await tester.pump();
 
-    // 1. Kondisi normal: Tidak ada mode pilih, judul "HoloDex", tombol Kalender
+    // 1. Kondisi normal: Tidak ada mode pilih, judul "HoloDex", tile fitur terlihat
     expect(tester.takeException(), isNull);
     expect(find.text('HoloDex'), findsOneWidget);
+    expect(find.text('Event'), findsOneWidget);
     expect(find.byIcon(Icons.calendar_month), findsOneWidget);
     expect(find.text('Pikachu'), findsOneWidget);
 
@@ -96,12 +97,13 @@ void main() {
     await tester.longPress(find.text('Pikachu'));
     await tester.pump();
 
-    // 3. Masuk mode pilih: Contextual AppBar muncul
+    // 3. Masuk mode pilih: Contextual AppBar muncul dan baris fitur disembunyikan
     expect(tester.takeException(), isNull);
     expect(find.text('1 dipilih'), findsOneWidget);
     expect(find.byIcon(Icons.close), findsOneWidget);
     expect(find.byIcon(Icons.favorite_border), findsOneWidget);
     expect(find.byIcon(Icons.calculate_outlined), findsOneWidget);
+    expect(find.text('Event'), findsNothing);
 
     // 4. Tap pada Mewtwo untuk menambah pilihan
     await tester.tap(find.text('Mewtwo'));
@@ -112,8 +114,9 @@ void main() {
     await tester.tap(find.byIcon(Icons.close));
     await tester.pump();
 
-    // 6. Kembali ke mode normal
+    // 6. Kembali ke mode normal: AppBar normal & baris fitur muncul kembali
     expect(find.text('HoloDex'), findsOneWidget);
+    expect(find.text('Event'), findsOneWidget);
     expect(find.byIcon(Icons.calendar_month), findsOneWidget);
   });
 }

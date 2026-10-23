@@ -92,7 +92,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     AiAdvisorSheet.show(
       context,
       card,
-      livePriceFormatted: livePriceFormatted,
+      livePriceFormatted,
     );
   }
 

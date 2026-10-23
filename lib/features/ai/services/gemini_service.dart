@@ -103,6 +103,53 @@ $question
     }
   }
 
+  /// Konsultasi Umum HoloBot (tanpa konteks kartu spesifik)
+  static Future<String> askGeneralAdvisor({
+    required String question,
+  }) async {
+    final cacheKey = 'general_${question.trim().toLowerCase()}';
+    final cached = _cache[cacheKey];
+    if (cached != null && !cached.isExpired) {
+      debugPrint('[HoloDex Gemini] Mengambil jawaban umum dari cache.');
+      return cached.answer;
+    }
+
+    if (!isConfigured) {
+      return 'Kunci GEMINI_API_KEY belum dikonfigurasi di file .env. '
+          'Silakan tambahkan API key Gemini Anda untuk mengaktifkan fitur ini.';
+    }
+
+    const systemInstruction = '''
+Kamu adalah HoloBot, asisten cerdas Pokémon TCG dan marketplace HoloDex untuk kolektor Indonesia.
+Aturan ketat:
+1. Batasi topik HANYA seputar kartu Pokémon TCG, aturan permainan, istilah kelangkaan (rarity), tips merawat koleksi, dan ekosistem marketplace HoloDex. Tolak dengan sopan topik di luar Pokémon TCG.
+2. Karena kamu sedang berbicara dalam mode umum tanpa data kartu spesifik, DILARANG mengarang harga kartu atau angka pasar tertentu. Beri tahu pengguna untuk membuka detail kartu langsung di Dex jika ingin mengecek estimasi harga pasar terkini.
+3. Jawab padat, ramah, dan to-the-point dalam Bahasa Indonesia (maksimal 2 paragraf).
+''';
+
+    final userPrompt = '''
+PERTANYAAN PENGGUNA:
+$question
+''';
+
+    try {
+      final answer = await _callGeminiApi(
+        systemInstruction: systemInstruction,
+        prompt: userPrompt,
+      );
+
+      _cache[cacheKey] = GeminiCacheEntry(
+        answer: answer,
+        timestamp: DateTime.now(),
+      );
+
+      return answer;
+    } catch (e) {
+      debugPrint('[HoloDex Gemini Error General] $e');
+      rethrow;
+    }
+  }
+
   /// Membuat deskripsi otomatis untuk listing jual kartu di pasar
   static Future<String> generateListingDescription({
     required CardModel card,

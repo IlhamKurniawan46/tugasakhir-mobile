@@ -8,6 +8,7 @@ import '../../../core/services/currency_service.dart';
 import '../../../core/services/session_service.dart';
 import '../../../core/utils/price_formatter.dart';
 import '../../../shared/providers/currency_provider.dart';
+import '../../ai/widgets/ai_advisor_sheet.dart';
 import '../../profile/providers/watchlist_provider.dart';
 import '../providers/dex_provider.dart';
 import '../widgets/card_tile.dart';
@@ -482,14 +483,6 @@ class _DexScreenState extends ConsumerState<DexScreen> {
                     ),
                   ],
                 ),
-                actions: [
-                  // SATU aksi utama: Ikon Kalender Event
-                  IconButton(
-                    icon: const Icon(Icons.calendar_month, color: AppColors.gold),
-                    tooltip: 'Kalender Event',
-                    onPressed: () => context.push('/calendar'),
-                  ),
-                ],
               ),
         body: Column(
           children: [
@@ -566,89 +559,6 @@ class _DexScreenState extends ConsumerState<DexScreen> {
               ),
             ),
 
-            // Selector Mata Uang Global (IDR | USD | EUR) & Tombol Konverter
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
-              child: SizedBox(
-                width: double.infinity,
-                child: Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: AppCurrency.values.map((currency) {
-                        final isSelected = selectedCurrency == currency;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: ChoiceChip(
-                            label: Text(currency.code),
-                            selected: isSelected,
-                            showCheckmark: false,
-                            onSelected: (_) {
-                              ref
-                                  .read(currencyProvider.notifier)
-                                  .setCurrency(currency);
-                            },
-                            selectedColor: AppColors.gold,
-                            backgroundColor: AppColors.surface,
-                            labelStyle: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: isSelected
-                                  ? AppColors.onGold
-                                  : AppColors.onSurfaceVariant,
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 0),
-                            visualDensity: VisualDensity.compact,
-                            side: BorderSide(
-                              color: isSelected
-                                  ? AppColors.gold
-                                  : AppColors.surfaceHigh,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    InkWell(
-                      onTap: () => context.push('/converter'),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.surfaceHigh),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.currency_exchange,
-                                size: 13, color: AppColors.gold),
-                            SizedBox(width: 5),
-                            Text(
-                              'Konverter',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.gold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
             // Mode Pilih Petunjuk Kecil (hanya muncul saat mode pilih aktif)
             if (_isSelectionMode)
               Container(
@@ -673,117 +583,299 @@ class _DexScreenState extends ConsumerState<DexScreen> {
                 ),
               ),
 
-            // Daftar Grid Kartu
-            Expanded(child: _buildBody(dexState)),
+            // Daftar Grid Kartu (dengan Baris Fitur & Chip Mata Uang di atasnya)
+            Expanded(child: _buildBody(dexState, selectedCurrency, textTheme)),
           ],
         ),
-        floatingActionButton: _isSelectionMode
-            ? null
-            : FloatingActionButton.extended(
-                heroTag: 'pack_opening_fab',
-                backgroundColor: AppColors.gold,
-                foregroundColor: Colors.black,
-                elevation: 4,
-                icon: const Icon(Icons.catching_pokemon, size: 20),
-                label: const Text(
-                  'Buka Pack',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                ),
-                onPressed: () => context.push('/pack-opening'),
-              ),
       ),
     );
   }
 
-  Widget _buildBody(DexState state) {
+  Widget _buildBody(
+    DexState state,
+    AppCurrency selectedCurrency,
+    TextTheme textTheme,
+  ) {
+    Widget contentSliver;
+
     // 1. Shimmer Skeleton Loading di awal
     if (state.isLoading && state.cards.isEmpty) {
-      return GridView.builder(
+      contentSliver = SliverPadding(
         padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.63,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
+        sliver: SliverGrid(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.63,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (_, _) => _buildShimmerTile(),
+            childCount: 6,
+          ),
         ),
-        itemCount: 6,
-        itemBuilder: (_, _) => _buildShimmerTile(),
       );
-    }
+    } else if (state.errorMessage != null && state.cards.isEmpty) {
+      // 2. Error View
+      contentSliver = SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.cloud_off_outlined,
+                  size: 56,
+                  color: AppColors.outline,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  state.errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.onSurfaceVariant),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () {
+                    ref.read(dexProvider.notifier).fetchCards(refresh: true);
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Coba Lagi'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    } else {
+      // 3. Grid Kartu Katalog
+      contentSliver = SliverPadding(
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+        sliver: SliverGrid(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.63,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              if (index >= state.cards.length) {
+                return _buildShimmerTile();
+              }
 
-    // 2. Error View
-    if (state.errorMessage != null && state.cards.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.cloud_off_outlined,
-                size: 56,
-                color: AppColors.outline,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                state.errorMessage!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.onSurfaceVariant),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: () {
-                  ref.read(dexProvider.notifier).fetchCards(refresh: true);
+              final card = state.cards[index];
+              final isSelected = _selectedCardIds.contains(card.id);
+
+              return CardTile(
+                card: card,
+                isSelected: isSelected,
+                isSelectionMode: _isSelectionMode,
+                onLongPress: () {
+                  _toggleCardSelection(card.id);
                 },
-                icon: const Icon(Icons.refresh),
-                label: const Text('Coba Lagi'),
-              ),
-            ],
+                onTap: () {
+                  if (_isSelectionMode) {
+                    _toggleCardSelection(card.id);
+                  } else {
+                    context.push('/dex/card/${card.id}', extra: card);
+                  }
+                },
+              );
+            },
+            childCount: state.cards.length + (state.isLoadingMore ? 2 : 0),
           ),
         ),
       );
     }
 
-    // 3. Grid Kartu dengan Infinite Scroll & Pull-to-Refresh
     return RefreshIndicator(
       color: AppColors.gold,
       backgroundColor: AppColors.surface,
       onRefresh: () => ref.read(dexProvider.notifier).fetchCards(refresh: true),
-      child: GridView.builder(
+      child: CustomScrollView(
         controller: _scrollController,
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
         physics: const AlwaysScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.63,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
+        slivers: [
+          // 1. Baris Fitur Baru: Event, Konverter, Mini Game, HoloBot
+          // Tersembunyi saat mode multi-select aktif
+          if (!_isSelectionMode)
+            SliverToBoxAdapter(
+              child: _buildFeatureTiles(context),
+            ),
+
+          // 2. Judul Section & Selector Mata Uang Global (IDR | USD | EUR)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Katalog dan Daftar Harga',
+                    textAlign: TextAlign.left,
+                    style: textTheme.titleSmall?.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurface,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildCurrencyChips(selectedCurrency),
+                ],
+              ),
+            ),
+          ),
+
+          // 3. Grid Kartu Katalog / Loading / Error
+          contentSliver,
+        ],
+      ),
+    );
+  }
+
+  /// Selector Mata Uang Global (IDR | USD | EUR) - Terbagi Merata Selebar Kolom Cari
+  Widget _buildCurrencyChips(AppCurrency selectedCurrency) {
+    return Row(
+      children: AppCurrency.values.map((currency) {
+        final isSelected = selectedCurrency == currency;
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2.5),
+            child: ChoiceChip(
+              label: Center(
+                child: Text(
+                  currency.code,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              selected: isSelected,
+              showCheckmark: false,
+              onSelected: (_) {
+                ref
+                    .read(currencyProvider.notifier)
+                    .setCurrency(currency);
+              },
+              selectedColor: AppColors.gold,
+              backgroundColor: AppColors.surface,
+              labelStyle: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: isSelected
+                    ? AppColors.onGold
+                    : AppColors.onSurfaceVariant,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+              visualDensity: VisualDensity.compact,
+              side: BorderSide(
+                color: isSelected
+                    ? AppColors.gold
+                    : AppColors.surfaceHigh,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  /// Baris Fitur: 4 Tile Berlabel (Event, Konverter, Mini Game, HoloBot)
+  Widget _buildFeatureTiles(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Row(
+        children: [
+          _buildSingleFeatureTile(
+            context: context,
+            label: 'Event',
+            icon: Icons.calendar_month,
+            semanticsLabel: 'Menu Kalender Event Pokémon',
+            onTap: () => context.push('/calendar'),
+          ),
+          const SizedBox(width: 8),
+          _buildSingleFeatureTile(
+            context: context,
+            label: 'Konverter',
+            icon: Icons.currency_exchange,
+            semanticsLabel: 'Menu Konverter Mata Uang',
+            onTap: () => context.push('/converter'),
+          ),
+          const SizedBox(width: 8),
+          _buildSingleFeatureTile(
+            context: context,
+            label: 'Mini Game',
+            icon: Icons.sports_esports,
+            semanticsLabel: 'Menu Mini Game Buka Booster Pack',
+            onTap: () => context.push('/pack-opening'),
+          ),
+          const SizedBox(width: 8),
+          _buildSingleFeatureTile(
+            context: context,
+            label: 'HoloBot',
+            icon: Icons.smart_toy,
+            semanticsLabel: 'Konsultasi Chatbot AI HoloBot',
+            onTap: () => AiAdvisorSheet.show(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Tile tunggal fitur dengan styling rapi, anti-overflow, dan aksesibilitas
+  Widget _buildSingleFeatureTile({
+    required BuildContext context,
+    required String label,
+    required IconData icon,
+    required String semanticsLabel,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: Semantics(
+        button: true,
+        label: semanticsLabel,
+        child: Material(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 56),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.surfaceHigh),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: AppColors.gold, size: 20),
+                  const SizedBox(height: 5),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-        itemCount: state.cards.length + (state.isLoadingMore ? 2 : 0),
-        itemBuilder: (context, index) {
-          if (index >= state.cards.length) {
-            return _buildShimmerTile();
-          }
-
-          final card = state.cards[index];
-          final isSelected = _selectedCardIds.contains(card.id);
-
-          return CardTile(
-            card: card,
-            isSelected: isSelected,
-            isSelectionMode: _isSelectionMode,
-            onLongPress: () {
-              _toggleCardSelection(card.id);
-            },
-            onTap: () {
-              if (_isSelectionMode) {
-                _toggleCardSelection(card.id);
-              } else {
-                context.push('/dex/card/${card.id}', extra: card);
-              }
-            },
-          );
-        },
       ),
     );
   }

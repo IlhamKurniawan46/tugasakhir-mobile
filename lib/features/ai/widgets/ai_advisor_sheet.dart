@@ -19,21 +19,21 @@ class _ChatMessage {
 
 /// Bottom Sheet Interaktif AI Penasihat Kartu (HoloBot)
 class AiAdvisorSheet extends StatefulWidget {
-  final CardModel card;
+  final CardModel? card;
   final String? livePriceFormatted;
 
   const AiAdvisorSheet({
     super.key,
-    required this.card,
+    this.card,
     this.livePriceFormatted,
   });
 
   /// Helper untuk menampilkan sheet dengan konfigurasi optimal
   static Future<void> show(
-    BuildContext context,
-    CardModel card, {
+    BuildContext context, [
+    CardModel? card,
     String? livePriceFormatted,
-  }) {
+  ]) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -60,22 +60,38 @@ class _AiAdvisorSheetState extends State<AiAdvisorSheet> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Pertanyaan siap pakai (Quick Prompts)
-  static const List<String> _quickPrompts = [
+  // Pertanyaan siap pakai spesifik kartu
+  static const List<String> _cardQuickPrompts = [
     'Apakah harga pasar saat ini wajar?',
     'Layak disimpan untuk koleksi atau dijual?',
     'Jelaskan keistimewaan & kelangkaan kartu ini',
     'Tips perawatan & penyimpanan fisik kartu',
   ];
 
+  // Pertanyaan siap pakai mode umum (tanpa konteks kartu)
+  static const List<String> _generalQuickPrompts = [
+    'Jelaskan arti rarity kartu',
+    'Tips merawat kartu koleksi',
+    'Apa beda harga TCGplayer & Cardmarket?',
+    'Tips menjual kartu agar cepat laku',
+  ];
+
+  List<String> get _activeQuickPrompts =>
+      widget.card != null ? _cardQuickPrompts : _generalQuickPrompts;
+
   @override
   void initState() {
     super.initState();
     // Sambutan awal dari HoloBot
+    final greeting = widget.card != null
+        ? 'Halo Kolektor! Saya HoloBot, analis kartu Pokémon TCG Anda. '
+            'Ada yang ingin Anda tanyakan seputar kartu ${widget.card!.name}?'
+        : 'Halo Kolektor! Saya HoloBot, asisten cerdas Pokémon TCG dan marketplace HoloDex Anda. '
+            'Ada yang bisa saya bantu seputar kartu Pokémon atau tips koleksi?';
+
     _messages.add(
       _ChatMessage(
-        text: 'Halo Kolektor! Saya HoloBot, analis kartu Pokémon TCG Anda. '
-            'Ada yang ingin Anda tanyakan seputar kartu ${widget.card.name}?',
+        text: greeting,
         isUser: false,
         timestamp: DateTime.now(),
       ),
@@ -120,11 +136,18 @@ class _AiAdvisorSheetState extends State<AiAdvisorSheet> {
     _scrollToBottom();
 
     try {
-      final answer = await GeminiService.askCardAdvisor(
-        card: widget.card,
-        question: trimmed,
-        livePriceFormatted: widget.livePriceFormatted,
-      );
+      final String answer;
+      if (widget.card != null) {
+        answer = await GeminiService.askCardAdvisor(
+          card: widget.card!,
+          question: trimmed,
+          livePriceFormatted: widget.livePriceFormatted,
+        );
+      } else {
+        answer = await GeminiService.askGeneralAdvisor(
+          question: trimmed,
+        );
+      }
 
       if (mounted) {
         setState(() {
@@ -209,7 +232,9 @@ class _AiAdvisorSheetState extends State<AiAdvisorSheet> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${widget.card.name} · #${widget.card.localId ?? widget.card.id}',
+                        widget.card != null
+                            ? '${widget.card!.name} · #${widget.card!.localId ?? widget.card!.id}'
+                            : 'Asisten Pokémon TCG · Mode Umum',
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.onSurfaceVariant,
@@ -306,7 +331,7 @@ class _AiAdvisorSheetState extends State<AiAdvisorSheet> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: _quickPrompts.map((prompt) {
+                children: _activeQuickPrompts.map((prompt) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ActionChip(
