@@ -6,6 +6,7 @@ import '../../../core/database/local_db.dart';
 import '../../../core/database/supabase_client.dart';
 import '../../../core/models/card_model.dart';
 import '../../../core/services/currency_service.dart';
+import '../../../core/services/notification_service.dart';
 
 enum SortOrder {
   expensiveFirst('Termahal', 'Harga tertinggi ke terendah'),
@@ -120,6 +121,13 @@ class DexNotifier extends StateNotifier<DexState> {
           page: targetPage + 1,
           hasMore: fetchedCards.length >= pageSize,
         );
+
+        // Periksa alert target harga kartu favorit di watchlist (Sesi 14)
+        if (targetPage == 0) {
+          NotificationService.instance.checkWatchlistPriceAlerts(
+            catalogCards: updatedList,
+          );
+        }
         return;
       }
     } catch (e) {

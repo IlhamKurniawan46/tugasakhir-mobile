@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/listing_model.dart';
+import 'dart:convert';
 import '../../../core/services/currency_service.dart';
 import '../../../core/services/marketplace_repository.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../core/utils/price_formatter.dart';
 import '../../../shared/providers/currency_provider.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -238,6 +240,16 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
           _listing = _listing?.copyWith(status: 'sold');
         });
 
+        // Kirim Notifikasi Transaksi Sukses (Ketentuan #12)
+        NotificationService.instance.showInstantNotification(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+          title: '🎉 Pembelian Kartu Berhasil!',
+          body:
+              'Kartu ${listing.card?.name ?? 'Pokémon'} (${listing.conditionLabel}) seharga ${PriceFormatter.formatIdr(listing.priceIdr)} berhasil Anda beli dan masuk ke Koleksi Saya.',
+          channelId: NotificationService.channelMarketplace,
+          payload: jsonEncode({'type': 'collection'}),
+        );
+
         // Dialog Berhasil
         showDialog(
           context: context,
@@ -249,14 +261,26 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             ),
             title: Row(
               children: const [
-                Icon(Icons.check_circle, color: AppColors.success, size: 28),
+                Icon(Icons.check_circle, color: AppColors.success, size: 26),
                 SizedBox(width: 8),
-                Text('Pembelian Berhasil!'),
+                Expanded(
+                  child: Text(
+                    'Pembelian Berhasil!',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ),
               ],
             ),
             content: Text(
               'Kartu ${listing.card?.name ?? ''} telah resmi Anda miliki dan tersimpan di Koleksi Saya.',
+              style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
             ),
+            actionsOverflowButtonSpacing: 8,
+            actionsAlignment: MainAxisAlignment.end,
             actions: [
               TextButton(
                 onPressed: () {
@@ -269,6 +293,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.gold,
                   foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
                 onPressed: () {
                   Navigator.pop(ctx);

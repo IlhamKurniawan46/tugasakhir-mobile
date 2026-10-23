@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/release_event_model.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../core/services/timezone_service.dart';
 import '../providers/calendar_provider.dart';
 
@@ -423,6 +424,23 @@ class _HeroCountdownCard extends StatelessWidget {
               );
             },
           ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.notifications_active_outlined, size: 16, color: AppColors.gold),
+              label: const Text(
+                'Pasang Pengingat Notifikasi',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.gold),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.gold),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              onPressed: () => _showEventReminderSheet(context, event),
+            ),
+          ),
         ],
       ),
     );
@@ -778,10 +796,296 @@ class _EventCard extends StatelessWidget {
               ],
             ),
           ),
+          if (!isPast) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  icon: const Icon(Icons.notifications_none, size: 16, color: AppColors.gold),
+                  label: const Text(
+                    'Ingatkan Saya',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.gold,
+                    ),
+                  ),
+                  onPressed: () => _showEventReminderSheet(context, event),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
+}
+
+void _showEventReminderSheet(BuildContext context, ReleaseEventModel event) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surfaceLow,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (ctx) {
+      return SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceHighest,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.notification_add, color: AppColors.gold, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Pengingat Rilis Pokémon',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                      Text(
+                        event.title,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Pilih opsi notifikasi jadwal rilis kartu untuk acara ini:',
+              style: TextStyle(fontSize: 12, color: AppColors.outline),
+            ),
+            const SizedBox(height: 12),
+
+            // Opsi 1: Jadwal 1 Hari Sebelum Rilis
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const CircleAvatar(
+                backgroundColor: AppColors.surface,
+                child: Icon(Icons.calendar_today, color: AppColors.gold, size: 18),
+              ),
+              title: const Text(
+                'Jadwalkan Pengingat Rilis',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+              subtitle: const Text(
+                'Notifikasi otomatis menjelang tanggal rilis resmi',
+                style: TextStyle(fontSize: 11, color: AppColors.outline),
+              ),
+              onTap: () async {
+                Navigator.of(ctx).pop();
+                final granted =
+                    await NotificationService.instance.requestPermission();
+                if (!context.mounted) return;
+                if (!granted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Izin notifikasi belum diaktifkan di setelan HP.'),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
+
+                final now = DateTime.now();
+                if (!event.eventDate.isAfter(now)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Event ini sudah lewat. Pengingat hanya untuk event mendatang.'),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
+
+                final oneDayBefore =
+                    event.eventDate.subtract(const Duration(days: 1));
+                final targetDate = oneDayBefore.isAfter(now)
+                    ? oneDayBefore
+                    : event.eventDate;
+
+                final result =
+                    await NotificationService.instance.scheduleEventNotification(
+                  id: event.id.hashCode.abs(),
+                  title: '🔔 Pengingat Rilis Pokémon!',
+                  body:
+                      'Event "${event.title}" akan berlangsung! Jangan lewatkan rilis resminya.',
+                  scheduledDate: targetDate,
+                );
+
+                if (context.mounted) {
+                  final String message;
+                  final Color bgColor;
+                  switch (result) {
+                    case NotificationScheduleResult.success:
+                      message = 'Pengingat rilis berhasil dijadwalkan!';
+                      bgColor = AppColors.success;
+                      break;
+                    case NotificationScheduleResult.pastTime:
+                      message = 'Waktu rilis event sudah lewat.';
+                      bgColor = AppColors.error;
+                      break;
+                    case NotificationScheduleResult.error:
+                      message = 'Gagal memasang pengingat sistem. Silakan coba opsi Tes Notifikasi 5 Detik.';
+                      bgColor = AppColors.error;
+                      break;
+                  }
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(message),
+                      backgroundColor: bgColor,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+            ),
+
+            const Divider(color: AppColors.surfaceHigh, height: 16),
+
+            // Opsi 2: Simulasi Cepat (5 Detik) untuk Demo Dosen
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const CircleAvatar(
+                backgroundColor: AppColors.surface,
+                child: Icon(Icons.flash_on, color: AppColors.cyan, size: 18),
+              ),
+              title: const Text(
+                'Tes Notifikasi Sekarang (Simulasi 5 Detik)',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+              subtitle: const Text(
+                'Notifikasi akan muncul 5 detik lagi',
+                style: TextStyle(fontSize: 11, color: AppColors.outline),
+              ),
+              onTap: () async {
+                Navigator.of(ctx).pop();
+                final granted =
+                    await NotificationService.instance.requestPermission();
+                if (!context.mounted) return;
+                if (!granted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Izin notifikasi belum diaktifkan di setelan HP.'),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
+
+                await NotificationService.instance.scheduleDemoReminder(
+                  id: event.id.hashCode.abs(),
+                  title: '🔔 Pengingat Rilis: ${event.title}',
+                  body:
+                      'Set kartu baru resmi dirilis hari ini! Segera cek katalog dan harga pasarnya.',
+                  delaySeconds: 5,
+                );
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Simulasi dimulai! Notifikasi akan muncul dalam 5 detik.',
+                      ),
+                      backgroundColor: AppColors.surfaceHighest,
+                      behavior: SnackBarBehavior.floating,
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
+              },
+            ),
+
+            const Divider(color: AppColors.surfaceHigh, height: 16),
+
+            // Opsi 3: Batalkan Notifikasi
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const CircleAvatar(
+                backgroundColor: AppColors.surface,
+                child: Icon(
+                  Icons.notifications_off_outlined,
+                  color: AppColors.error,
+                  size: 18,
+                ),
+              ),
+              title: const Text(
+                'Batalkan Pengingat Event Ini',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.error,
+                ),
+              ),
+              subtitle: const Text(
+                'Hapus jadwal pengingat untuk event ini',
+                style: TextStyle(fontSize: 11, color: AppColors.outline),
+              ),
+              onTap: () async {
+                Navigator.of(ctx).pop();
+                await NotificationService.instance
+                    .cancelNotification(event.id.hashCode.abs());
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Pengingat event dibatalkan.'),
+                      backgroundColor: AppColors.surfaceHighest,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  },
+  );
 }
 
 /// Modal Bottom Sheet untuk Kalkulator Selisih Jam Antar Zona

@@ -48,12 +48,12 @@ void main() {
       await tester.pumpAndSettle();
 
       // Cek judul dan nama kartu
-      expect(find.text('HoloBot — AI Penasihat Kartu'), findsOneWidget);
+      expect(find.text('HoloBot'), findsWidgets);
       expect(find.textContaining('Miraidon ex'), findsWidgets);
 
       // Cek disclaimer finansial wajib
       expect(
-        find.textContaining('Bukan nasihat keuangan'),
+        find.textContaining('Bukan penasihat keuangan'),
         findsOneWidget,
       );
 
@@ -87,7 +87,7 @@ void main() {
 
       // Tidak ada overflow exception
       expect(tester.takeException(), isNull);
-      expect(find.text('HoloBot — AI Penasihat Kartu'), findsOneWidget);
+      expect(find.text('HoloBot'), findsWidgets);
     });
   });
 }

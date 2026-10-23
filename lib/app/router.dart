@@ -1,5 +1,8 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/services/notification_service.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/splash_screen.dart';
@@ -178,3 +181,25 @@ final GoRouter appRouter = GoRouter(
     ),
   ],
 );
+
+/// Menghubungkan klik notifikasi ke sistem routing aplikasi
+void setupNotificationNavigation() {
+  NotificationService.onNotificationTapped = (payload) {
+    if (payload == null || payload.isEmpty) return;
+    try {
+      final data = jsonDecode(payload) as Map<String, dynamic>;
+      final type = data['type'];
+      if (type == 'collection') {
+        appRouter.push('/collection');
+      } else if (type == 'calendar') {
+        appRouter.push('/calendar');
+      } else if (type == 'card_detail' && data['cardId'] != null) {
+        appRouter.push('/dex/${data['cardId']}');
+      } else if (type == 'marketplace') {
+        appRouter.push('/marketplace/transactions');
+      }
+    } catch (e) {
+      debugPrint('[HoloDex Router] Error handling notification tap: $e');
+    }
+  };
+}

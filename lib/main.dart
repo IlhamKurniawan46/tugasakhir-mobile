@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
+import 'app/router.dart';
 import 'core/database/local_db.dart';
 import 'core/database/supabase_client.dart';
 import 'core/services/currency_service.dart';
+import 'core/services/notification_service.dart';
 import 'core/utils/env_loader.dart';
 
 void main() async {
@@ -36,7 +38,15 @@ void main() async {
     print('[HoloDex Error] Inisialisasi CurrencyService gagal: $e');
   }
 
-  // 5. Jalankan aplikasi dibungkus ProviderScope (Riverpod)
+  // 5. Inisialisasi service notifikasi lokal (Ketentuan #12)
+  try {
+    await NotificationService.instance.init();
+    setupNotificationNavigation();
+  } catch (e) {
+    print('[HoloDex Error] Inisialisasi NotificationService gagal: $e');
+  }
+
+  // 6. Jalankan aplikasi dibungkus ProviderScope (Riverpod)
   runApp(
     const ProviderScope(
       child: HoloDexApp(),

@@ -52,24 +52,29 @@ void main() {
       expect(find.text('WIT'), findsWidgets);
       expect(find.text('LDN'), findsWidgets);
 
-      // Cek Hero Countdown
+      // Cek Hero Countdown & Tombol Pengingat Notifikasi
       expect(find.text('HARI'), findsOneWidget);
       expect(find.text('JAM'), findsOneWidget);
       expect(find.text('MENIT'), findsOneWidget);
       expect(find.text('DETIK'), findsOneWidget);
-
-      // Cek Timeline Agenda & Filter Chips horizontal scrollable
-      expect(find.text('Timeline Agenda'), findsOneWidget);
-      expect(find.text('Semua Event'), findsOneWidget);
-      expect(find.text('Rilis Set'), findsOneWidget);
-      expect(find.text('Turnamen'), findsOneWidget);
+      expect(find.text('Pasang Pengingat Notifikasi'), findsOneWidget);
 
       // Cek Kartu Kalkulator Selisih Jam
       expect(find.text('Kalkulator Selisih Waktu 4 Zona'), findsOneWidget);
       expect(find.text('Konversi jam antar WIB, WITA, WIT, dan London'), findsOneWidget);
 
-      // Pastikan tombol 'Ingatkan Saya' SUDAH TIDAK ADA (sesuai instruksi Sesi 14)
-      expect(find.text('Ingatkan Saya'), findsNothing);
+      // Scroll ke Timeline Agenda & Filter Chips horizontal scrollable
+      await tester.scrollUntilVisible(
+        find.text('Timeline Agenda'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Timeline Agenda'), findsOneWidget);
+      expect(find.text('Semua Event'), findsOneWidget);
+      expect(find.text('Rilis Set'), findsOneWidget);
+      expect(find.text('Turnamen'), findsOneWidget);
 
       // Pastikan TIDAK ADA kata Demo Day di tampilan
       expect(find.textContaining('Demo Day'), findsNothing);
