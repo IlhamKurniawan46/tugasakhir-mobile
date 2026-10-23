@@ -939,7 +939,7 @@ class _DexScreenState extends ConsumerState<DexScreen> {
           _buildSingleFeatureTile(
             context: context,
             label: 'HoloBot',
-            icon: Icons.smart_toy,
+            icon: Icons.auto_awesome,
             semanticsLabel: 'Konsultasi Chatbot AI HoloBot',
             onTap: () => AiAdvisorSheet.show(context),
           ),
