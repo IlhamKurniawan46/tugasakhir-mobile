@@ -1,107 +1,156 @@
-# HoloDex — Pokémon TCG Catalog & Collector Marketplace
+# HoloDex — Pokémon TCG Companion & P2P Collector Marketplace
 
-> **Tugas Akhir Mata Kuliah Pemrograman Aplikasi Mobile**  
-> Aplikasi mobile katalog kartu Pokémon TCG interaktif dan pasar kolektor *peer-to-peer* (P2P) berbasis Flutter, mengintegrasikan sensor perangkat, kecerdasan buatan, keamanan kriptografis, multi-database, serta verifikasi kepemilikan terdesentralisasi (blockchain).
+[![Flutter](https://img.shields.io/badge/Flutter-3.13%2B-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.1%2B-0175C2?logo=dart&logoColor=white)](https://dart.dev)
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-3DDC84?logo=android&logoColor=white)](https://android.com)
+[![Tests](https://img.shields.io/badge/Tests-119%20Passed-brightgreen?logo=checkmarx&logoColor=white)](test/)
+[![Security](https://img.shields.io/badge/Security-PBKDF2--HMAC--SHA256-blueviolet?logo=shield&logoColor=white)](#-keamanan--kriptografi)
+[![Blockchain](https://img.shields.io/badge/Web3-Polygon%20Amoy%20ERC--721-8247E5?logo=polygon&logoColor=white)](#-sertifikasi-kepemilikan-digital-web3--blockchain)
 
----
-
-## 📱 Daftar Isi
-1. [Tentang HoloDex](#-tentang-holodex)
-2. [Tabel Pemetaan 13 Ketentuan Dosen + Fitur Tambahan](#-tabel-pemetaan-13-ketentuan-dosen--fitur-tambahan)
-3. [Arsitektur & Tech Stack](#-arsitektur--tech-stack)
-4. [Struktur Direktori Proyek](#-struktur-direktori-proyek)
-5. [Cara Instalasi & Menjalankan Aplikasi](#-cara-instalasi--menjalankan-aplikasi)
-6. [Skenario Pengujian & Panduan Demo Dosen](#-skenario-pengujian--panduan-demo-dosen)
-7. [Hasil Pengujian Otomatis (Unit & Widget Tests)](#-hasil-pengujian-otomatis)
+**HoloDex** adalah aplikasi mobile *end-to-end* untuk kolektor Pokémon TCG yang menggabungkan katalog kartu interaktif, pasar *peer-to-peer* (P2P) berbasis lokasi fisik (LBS), simulasi fisik kartu holografik 3D berbantuan sensor giroskop, mesin rekomendasi personal *on-device* berbasis privasi, dan sertifikasi kepemilikan digital terdesentralisasi (blockchain).
 
 ---
 
-## 🌟 Tentang HoloDex
-
-**HoloDex** dirancang khusus untuk memecahkan tantangan kolektor Pokémon TCG di Indonesia:
-- **Katalog Terkurasi:** Menampilkan ratusan kartu dari 4 set populer (`swsh3`, `swsh7`, `sv01`, `sv05`, `sv03.5`, `me02.5`, `sv08.5`, `me02`) dengan data harga acuan internasional (TCGPlayer & Cardmarket).
-- **Konversi Multi-Mata Uang Terpusat:** Menampilkan harga real-time dalam Rupiah (IDR), Dolar AS (USD), Euro (EUR), dan Yen Jepang (JPY) melalui integrasi resmi European Central Bank (ECB / Frankfurter API).
-- **Efek Holografik Sensorik:** Kartu foil/holofoil bereaksi terhadap kemiringan fisik ponsel pengguna menggunakan sensor *gyroscope*, menciptakan pantulan cahaya holografik 3D yang dinamis.
-- **Pasar Peer-to-Peer & LBS:** Kolektor dapat memperjualbelikan kartu fisik, menentukan titik temu COD (*Cash on Delivery*) berbasis GPS/peta interaktif, serta melakukan transaksi atomik aman.
-- **Sertifikasi Blockchain & AI Advisor:** Verifikasi riwayat kepemilikan kartu tercatat pada Polygon Testnet (ERC-721) dan hash-chain lokal, didukung oleh asisten AI Gemini (HoloBot) serta mesin rekomendasi personal *on-device*.
-
----
-
-## 📋 Tabel Pemetaan 13 Ketentuan Dosen + Fitur Tambahan
-
-Semua 13 poin ketentuan tugas akhir telah diimplementasikan secara tuntas tanpa menggunakan Firebase:
-
-| # | Ketentuan Dosen | Implementasi Fitur di HoloDex | Komponen / Layar Utama | Package & Teknologi |
-|---|----------------|-------------------------------|------------------------|---------------------|
-| **1** | **Konsep Proyek Jelas** | Ekosistem kolektor Pokémon TCG Indonesia: Katalog, Simulasi Pack Opening, Pasar P2P COD, dan Binder Koleksi Fisik. | Seluruh aplikasi | Flutter, Material Design 3 |
-| **2** | **Login Terenkripsi (TANPA Firebase) + Session** | Autentikasi mandiri menggunakan salt random 16-byte dan hashing PBKDF2-HMAC-SHA256 (100.000 iterasi). Token sesi UUID persisten di enkripsi hardware. | `lib/features/auth/screens/login_screen.dart`<br>`lib/core/services/auth_service.dart` | `pointycastle`,<br>`flutter_secure_storage` (Android Keystore) |
-| **3** | **Biometric Fingerprint + Fallback Password** | Login instan dengan sidik jari pada perangkat Android dengan fallback autentikasi kata sandi manual. Pengaturan toggle diaktifkan di Profil. | `lib/features/auth/screens/login_screen.dart`<br>`lib/core/services/biometric_service.dart` | `local_auth` |
-| **4** | **Database Lokal DAN Online** | **Online:** Supabase PostgreSQL untuk data pengguna, katalog kartu, listing pasar, dan RPC transaksi atomik.<br>**Lokal:** SQLite (6 migrasi skema) untuk offline cache, watchlist, riwayat minat, dan sertifikat kartu. | `lib/core/database/local_db.dart`<br>`lib/core/database/supabase_client.dart` | `sqflite`,<br>`supabase_flutter` |
-| **5** | **Web Service / REST API + LBS** | Integrasi API publik TCGdex & Frankfurter API, serta fitur LBS pemilihan koordinat COD dan pencarian penjual terdekat dengan kalkulasi Haversine. | `lib/features/marketplace/screens/map_screen.dart`<br>`lib/core/services/location_service.dart` | `http`,<br>`flutter_map`,<br>`geolocator` |
-| **6** | **Bottom Nav, Profil (Foto), Saran & Kesan, Logout** | 4 tab utama + 1 tab Saran & Kesan. Profil mendukung penggantian foto diri via Kamera/Galeri atau hapus foto, serta tombol keluar akun aman. | `lib/features/profile/screens/profile_screen.dart`<br>`lib/features/saran_kesan/screens/saran_kesan_screen.dart` | `go_router`,<br>`image_picker`,<br>`path_provider` |
-| **7** | **Konversi Mata Uang (min. 3) + 4 Zona Waktu** | Konversi 4 mata uang (IDR, USD, EUR, JPY) dengan cache kurs ECB 24 jam. Kalender jadwal rilis set kartu dengan jam digital tabular dan countdown di 4 zona waktu (WIB, WITA, WIT, London GMT/BST). | `lib/features/converter/screens/converter_screen.dart`<br>`lib/features/converter/screens/calendar_screen.dart` | `http` (Frankfurter),<br>`timezone`,<br>`intl` |
-| **8** | **Minimal 2 Sensor Perangkat** | **Sensor 1 (Gyroscope):** Efek tilt holografik 3D & kemilau cahaya pada kartu foil.<br>**Sensor 2 (Accelerometer):** Deteksi guncangan ponsel (*shake*) untuk membuka booster pack kartu. | `lib/features/dex/widgets/holo_card_widget.dart`<br>`lib/features/pack_opening/screens/pack_opening_screen.dart` | `sensors_plus` |
-| **9** | **AI / LLM Terintegrasi** | **HoloBot:** Penasihat kartu cerdas menggunakan Gemini REST API murni (rekomendasi investasi & analisis kartu).<br>**Auto-listing Generator:** Pembuat deskripsi listing otomatis berdasarkan kondisi dan nama kartu. | `lib/features/ai/services/gemini_service.dart`<br>`lib/features/ai/widgets/ai_advisor_sheet.dart` | `http` (Direct Gemini REST endpoint) |
-| **10** | **Mini Game Sederhana** | Simulasi Buka Booster Pack: guncang ponsel atau ketuk buka pack, animasi buka kartu per kartu, efek haptic, perhitungan total nilai IDR pack, dan papan skor koleksi. | `lib/features/pack_opening/screens/pack_opening_screen.dart` | `sensors_plus`,<br>`flutter_riverpod` |
-| **11** | **Pencarian & Pemilihan Data** | Pencarian teks instan (debounce 400ms), filter multi-kategori (Set, Rarity, Tipe Energi), pengurutan dinamis (Harga, Nama), dan mode pilih multi-select kartu katalog (tekan lama). | `lib/features/dex/screens/search_screen.dart`<br>`lib/features/dex/screens/dex_screen.dart` | Flutter Material, `flutter_riverpod` |
-| **12** | **Notifikasi Mobile** | Notifikasi lokal sistem terjadwal untuk jadwal rilis set kartu Pokémon TCG, pengingat klaim pack harian, dan notifikasi sukses transaksi pasar dengan payload navigasi. | `lib/core/services/notification_service.dart` | `flutter_local_notifications`,<br>`timezone` |
-| **13** | **Blockchain Sederhana** | Smart Contract ERC-721 di Polygon Amoy Testnet (Chain ID 80002) untuk pencatatan sertifikat kepemilikan kartu (*provenance* digital), tautan langsung ke PolygonScan Explorer, verifikasi QR Code, dan buku besar (*ledger*) hash-chain SHA-256 lokal. | `lib/features/marketplace/screens/ledger_screen.dart`<br>`lib/core/services/blockchain_service.dart` | `web3dart`,<br>`crypto` (SHA-256),<br>`qr_flutter`,<br>`url_launcher` |
-| **+** | **AI Rekomendasi Personal On-Device** | Content-based filtering heuristik berbobot dengan *time-decay exponential* (waktu paruh 14 hari) berdasarkan perilaku kolektor di SQLite lokal, Carousel "Untuk Kamu", badge "Cocok" di pasar, dan Radar Minat di profil. | `lib/core/services/recommendation_engine.dart`<br>`lib/features/dex/widgets/recommendation_carousel.dart` | SQLite v6 (`user_interactions`), In-memory Affinity Matrix |
+## 📑 Daftar Isi
+1. [Fitur Utama](#-fitur-utama)
+2. [Spesifikasi Arsitektur & Rekayasa Sistem](#-spesifikasi-arsitektur--rekayasa-sistem)
+3. [Keamanan & Kriptografi](#-keamanan--kriptografi)
+4. [Sertifikasi Kepemilikan Digital (Web3 & Blockchain)](#-sertifikasi-kepemilikan-digital-web3--blockchain)
+5. [AI Personal On-Device & HoloBot](#-ai-personal-on-device--holobot)
+6. [Struktur Direktori Proyek](#-struktur-direktori-proyek)
+7. [Panduan Instalasi & Menjalankan Proyek](#-panduan-instalasi--menjalankan-proyek)
+8. [Jaminan Kualitas & Pengujian Otomatis](#-jaminan-kualitas--pengujian-otomatis)
+9. [Alur Eksplorasi Fitur (User Journey)](#-alur-eksplorasi-fitur-user-journey)
+10. [Lisensi & Penafian](#-lisensi--penafian)
 
 ---
 
-## 🏗️ Arsitektur & Tech Stack
+## 🌟 Fitur Utama
+
+- **Katalog Terkurasi Multi-Set:** Ratusan kartu dari berbagai generasi dan seri kartu terpopuler (`swsh3`, `swsh7`, `sv01`, `sv05`, `sv03.5`, `me02.5`, `sv08.5`, `me02`) dengan integrasi data nilai pasar internasional (TCGPlayer & Cardmarket).
+- **Mesin Konversi Multi-Mata Uang Real-Time:** Sinkronisasi kurs acuan resmi European Central Bank (ECB / Frankfurter API) yang mendukung konversi terpusat 4 mata uang (**IDR, USD, EUR, JPY**) dengan cache toleran offline (TTL 24 jam).
+- **Simulasi Holografik 3D Berbasis Sensor (Gyroscope):** Lapisan efek kemilau foil interaktif yang merespons orientasi kemiringan fisik perangkat pengguna secara presisi dengan visualisasi cahaya dinamis.
+- **Pasar Peer-to-Peer & LBS Terintegrasi:** Kolektor dapat memperjualbelikan kartu fisik, menandai titik temu COD (*Cash on Delivery*) berbasis OpenStreetMap & geolokasi GPS presisi, serta mengeksekusi transaksi atomik di backend.
+- **Rekomendasi Cerdas On-Device (Zero-Cloud Privacy):** Algoritma *content-based filtering* heuristik berbobot dengan peluruhan eksponensial waktu (*time-decay exponential*, waktu paruh 14 hari) yang mempelajari selera kolektor secara lokal tanpa mengirimkan data pribadi ke server.
+- **Asisten AI Terintegrasi (HoloBot):** Analisis kelayakan koleksi kartu dan generator deskripsi barang jual otomatis memanfaatkan model Google Gemini melalui koneksi HTTP REST murni.
+- **Mini Game Booster Pack Simulator (Accelerometer):** Interaksi buka kartu menggunakan guncangan fisik ponsel (*shake-to-reveal*), animasi buka kartu berbobot probabilitas resmi, efek *haptic feedback*, dan kalkulasi nilai perolehan IDR.
+- **Sertifikasi Digital Terdesentralisasi:** Pencatatan riwayat kepemilikan kartu fisik (*digital provenance*) pada jaringan publik Polygon Testnet Amoy (ERC-721), dilengkapi pemindai QR Code dan tautan verifikasi penjelajah blok (PolygonScan).
+
+---
+
+## ⚙️ Spesifikasi Arsitektur & Rekayasa Sistem
+
+Aplikasi ini dibangun menggunakan arsitektur modular **Feature-First** berbasis Flutter & Riverpod tanpa *code-generation*, memberikan kendali penuh pada performa, skalabilitas, dan kemudahan audit kode.
+
+| Modul Sistem | Kapabilitas & Implementasi Teknis | Komponen / Layar Utama | Stack & Pustaka Utama |
+|---|---|---|---|
+| **Manajemen Autentikasi** | Salted hashing PBKDF2-HMAC-SHA256 (100.000 iterasi), zero plaintext password, sesi UUID persisten di hardware secure enclave. | `lib/features/auth/` | `pointycastle`, `flutter_secure_storage` |
+| **Keamanan Biometrik** | Autentikasi sidik jari perangkat dengan fallback verifikasi kata sandi kriptografis. | `lib/core/services/biometric_service.dart` | `local_auth` |
+| **Penyimpanan Ganda (Hybrid Database)** | **Cloud:** PostgreSQL terkelola via Supabase dengan transaksi atomik RPC.<br>**Edge/Local:** SQLite v6 untuk cache offline, watchlist, riwayat minat, dan sertifikat kartu. | `lib/core/database/` | `sqflite`, `supabase_flutter` |
+| **Layanan Web & LBS** | Integrasi REST API publik (TCGdex, ECB) dan penentuan titik temu COD interaktif berbasis peta OSM dengan kalkulasi jarak formula Haversine. | `lib/features/marketplace/` | `http`, `flutter_map`, `geolocator` |
+| **Katalog & Konversi Finansial** | Normalisasi harga global, konversi dinamis 4 mata uang (IDR, USD, EUR, JPY), dan pemantau jadwal rilis set kartu dengan jam digital 4 zona waktu (WIB, WITA, WIT, London GMT/BST). | `lib/features/converter/`<br>`lib/features/dex/` | `http` (Frankfurter), `timezone`, `intl` |
+| **Integrasi Sensor Fisik** | **Gyroscope:** Kalkulasi rotasi kuaternion/derajat untuk shader kilau holo 3D.<br>**Accelerometer:** Deteksi ambang batas akselerasi guncangan (*shake gesture*) untuk mini game. | `lib/features/dex/widgets/holo_card_widget.dart`<br>`lib/features/pack_opening/` | `sensors_plus` |
+| **Kecerdasan Buatan (LLM)** | Asisten penasihat kartu koleksi dan pembuat draf deskripsi listing otomatis via direct REST request ke Google Gemini API (tanpa SDK pihak ketiga yang berat). | `lib/features/ai/` | `http` (Direct Gemini REST endpoint) |
+| **Pencarian & Seleksi Tingkat Lanjut** | Pencarian instan ter-debounce (400ms), multi-filter terindeks (Set, Rarity, Tipe), pengurutan multi-kriteria, serta mode seleksi kartu massal (*multi-select contextual action bar*). | `lib/features/dex/` | `flutter_riverpod` |
+| **Sistem Notifikasi Lokal** | Notifikasi push sistem berkala untuk pengingat kalender rilis set kartu, klaim booster pack, dan status penyelesaian transaksi pasar. | `lib/core/services/notification_service.dart` | `flutter_local_notifications`, `timezone` |
+| **Provenance Blockchain** | Smart contract ERC-721 di Polygon Amoy Testnet (Chain ID 80002), penelusuran transaksi on-chain via PolygonScan, modal QR Code verifikasi fisik, dan buku besar *hash-chain* SHA-256 lokal. | `lib/features/marketplace/screens/ledger_screen.dart` | `web3dart`, `crypto`, `qr_flutter`, `url_launcher` |
+| **Personalisasi On-Device** | Content-based filtering heuristik berbobot berbasis histori interaksi lokal, carousel "Rekomendasi Untuk Kamu", penandaan cerdas "Cocok", dan visualisasi Radar Minat. | `lib/core/services/recommendation_engine.dart` | SQLite v6 (`user_interactions`), In-Memory Affinity Matrix |
+
+---
+
+## 🔒 Keamanan & Kriptografi
+
+HoloDex menerapkan prinsip pertahanan berlapis (*defense-in-depth*) untuk melindungi privasi dan integritas data pengguna:
+
+1. **Hashing Kata Sandi Mandiri (PBKDF2-HMAC-SHA256):**
+   - Menggunakan salt acak 16-byte kriptografis aman (`SecureRandom` dari PointyCastle).
+   - Melakukan 100.000 iterasi peregangan kunci (*key stretching*) dengan panjang output 32-byte.
+   - Pengecekan kecocokan kata sandi menggunakan fungsi perbandingan waktu-konstan (*constant-time equality check*) untuk mencegah eksploitasi *timing attacks*.
+2. **Penyimpanan Sesi Hardware-Backed:**
+   - Kredensial sesi disimpan menggunakan `flutter_secure_storage` yang terenkripsi langsung pada modul Android Keystore / iOS Keychain.
+   - Tidak ada token sensitif yang disimpan dalam `SharedPreferences` biasa.
+3. **Integritas Transaksi Atomik (ACID):**
+   - Transaksi jual-beli pasar dieksekusi secara atomik melalui PostgreSQL Stored Procedure (`buy_listing`) pada Supabase, mencegah *race condition* dan pengeluaran ganda (*double spending*).
+4. **Isolasi Data Minat Lokal:**
+   - Seluruh jejak klik, pencarian, dan preferensi kuis pengguna disimpan murni di database lokal SQLite v6. Tidak ada data analitik perilaku yang diunggah ke cloud.
+
+---
+
+## ⛓️ Sertifikasi Kepemilikan Digital (Web3 & Blockchain)
+
+Untuk menjamin keaslian dan melacak riwayat perpindahan tangan kartu bernilai tinggi:
+- **Jaringan:** Polygon Testnet (Amoy) — Chain ID `80002`.
+- **Standar Kontrak:** ERC-721 (`HoloDexCertificate.sol`) dengan pencatatan `mintCard` dan `recordTransfer`.
+- **Relayer Tanpa Friksi Gas:** Dilengkapi mekanisme *custodial relayer* yang menandatangani transaksi on-chain sehingga pengguna tidak perlu memasang dompet eksternal atau memikirkan gas fee.
+- **Auditabilitas Publik:** Setiap transaksi menghasilkan `tx_hash` dan `token_id` valid yang dapat diperiksa langsung di [PolygonScan Explorer](https://amoy.polygonscan.com) serta diverifikasi melalui QR Code digital.
+- **Ledger Hash-Chain Lokal:** Setiap mutasi kepemilikan membentuk blok rantai hash kriptografis SHA-256 di basis data lokal sebagai verifikasi cadangan saat offline.
+
+---
+
+## 🧠 AI Personal On-Device & HoloBot
+
+### 1. On-Device Recommendation Engine (Zero-Cloud Privacy)
+Berbeda dengan sistem rekomendasi berbasis cloud yang mengumpulkan privasi pengguna, HoloDex menjalankan mesin inferensi *content-based filtering* 100% di perangkat:
+- **Event Logging Berbobot:** Pembelian (`5.0`), Penambahan Watchlist (`3.0`), Kuis Minat (`3.0`), Pencarian Terarah (`2.0`), dan Peninjauan Kartu (`1.0`).
+- **Peluruhan Waktu Eksponensial:** Riwayat diberi bobot berbasis rumus peluruhan waktu:
+  $$w(t) = w_0 \times 2^{-\frac{\Delta t}{14\text{ hari}}}$$
+  Interaksi yang berumur lebih dari 90 hari otomatis dieliminasi ($w = 0$).
+- **Anti-Filter Bubble:** Penalti diversitas membatasi maksimal 3 kartu dari set yang sama, mengecualikan kartu yang sudah dimiliki/dilihat dalam 24 jam, serta mencadangkan 20% slot untuk eksplorasi kartu bernilai tinggi di luar selera utama pengguna.
+
+### 2. Generative AI Companion (HoloBot & Auto-Copywriter)
+- Menggunakan arsitektur koneksi langsung ke Google Gemini API via REST HTTP.
+- Memberikan masukan strategis mengenai tren kelangkaan kartu, pergerakan harga pasar, dan menghasilkan deskripsi penjualan kartu secara otomatis, rapi, dan terstruktur.
+
+---
+
+## 📁 Struktur Direktori Proyek
 
 ```
 lib/
-├── app/                  # Inisialisasi aplikasi, router (go_router), & tema gelap konsisten
+├── app/                  # Inisialisasi aplikasi, deklarasi rute (go_router), tema visual
 ├── core/
-│   ├── constants/        # Token warna (AppColors), tema typography, konstanta sistem
-│   ├── database/         # SQLite helper (local_db.dart) & Supabase REST client
-│   ├── models/           # Data models manual (CardModel, ListingModel, UserModel, dll.)
+│   ├── constants/        # Token warna (AppColors), tipografi, dimensi responsif
+│   ├── database/         # SQLite helper (local_db.dart) & klien REST Supabase
+│   ├── models/           # Entitas data (CardModel, ListingModel, UserModel, dll.)
 │   ├── services/         # Layanan auth PBKDF2, biometrik, currency, lokasi, blockchain, notifikasi
-│   └── utils/            # Formatter harga multi-mata uang, hashing, env loader
+│   └── utils/            # Formatter harga multi-kurs, utilitas hash, env loader
 ├── features/
 │   ├── auth/             # Splash screen, Login (PBKDF2 & Biometrik), Registrasi
 │   ├── dex/              # Katalog kartu Pokémon, carousel rekomendasi AI, filter & detail kartu
 │   ├── marketplace/      # Pasar P2P, peta LBS penjual COD, buat listing, buku besar blockchain
-│   ├── profile/          # Profil pengguna, ganti foto profil, radar selera AI, binder koleksi & watchlist
-│   ├── pack_opening/     # Mini game buka booster pack kartu dengan accelerometer
-│   ├── converter/        # Konverter 4 mata uang & kalender jam 4 zona waktu
-│   ├── ai/               # HoloBot asisten AI Gemini via REST API murni
-│   └── saran_kesan/      # Form masukan, saran & kesan perkuliahan
+│   ├── profile/          # Profil pengguna, ganti foto profil kamera/galeri, radar selera AI, binder koleksi
+│   ├── pack_opening/     # Mini game simulasi pack opening dengan sensor akselerometer
+│   ├── converter/        # Konverter kurs 4 mata uang & kalender jam 4 zona waktu
+│   ├── ai/               # HoloBot penasihat kartu koleksi via Gemini REST
+│   └── saran_kesan/      # Modul masukan & evaluasi pengguna
 └── shared/
-    ├── providers/        # State Riverpod global (shared_providers.dart)
+    ├── providers/        # State Riverpod global terpusat
     └── widgets/          # Komponen UI global (BottomNavShell, LoadingWidget)
 ```
 
-### Prinsip Utama
-1. **Feature-First Architecture:** Tiap domain fitur terisolasi di dalam direktorinya masing-masing.
-2. **Tanpa Code Generation:** Model data ditulis tangan dengan validasi parsing yang aman, menghindari build runner yang berat.
-3. **Keamanan Bertingkat:** Tanpa hardcoded secret keys. Kunci sensitif dimuat melalui `.env`. Password tidak pernah disimpan dalam format teks biasa, melainkan melalui *salted hashing* PBKDF2.
-
 ---
 
-## 🚀 Cara Instalasi & Menjalankan Aplikasi
+## 🛠️ Panduan Instalasi & Menjalankan Proyek
 
-### 1. Prasyarat
-- Flutter SDK `^3.13.2` atau lebih baru
-- Android SDK (API Level 26+ / Android 8.0 ke atas direkomendasikan)
-- Java Development Kit (JDK 17)
+### 1. Prasyarat Sistem
+- **Flutter SDK:** Version `^3.13.2` atau lebih baru
+- **Dart SDK:** Version `^3.1.0`
+- **Android Target:** API Level 26 ke atas (Android 8.0+)
+- **JDK:** OpenJDK 17
 
-### 2. Kloning Repositori & Instalasi Dependensi
+### 2. Kloning Repositori & Instalasi Paket
 ```bash
 git clone https://github.com/IlhamKurniawan46/tugasakhir-mobile.git
 cd tugasakhir-mobile
 flutter pub get
 ```
 
-### 3. Konfigurasi Environment (`.env`)
-Salin berkas `.env.example` menjadi `.env` di root proyek:
+### 3. Konfigurasi Kredensial Environment (`.env`)
+Salin berkas konfigurasi template:
 ```bash
 cp .env.example .env
 ```
-Isi variabel konfigurasi di dalam file `.env`:
+Sesuaikan parameter environment di dalam berkas `.env`:
 ```env
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -111,79 +160,67 @@ POLYGON_EXPLORER_BASE_URL=https://amoy.polygonscan.com
 BLOCKCHAIN_OPERATOR_PRIVATE_KEY=your_operator_private_key
 ```
 
-### 4. Menjalankan Aplikasi
-Hubungkan perangkat Android fisik atau jalankan emulator Android, lalu jalankan:
+### 4. Menjalankan Mode Pengembangan
+Pastikan perangkat Android atau emulator terhubung:
 ```bash
 flutter run
 ```
 
-### 5. Kompilasi APK Debug Siap Pakai
-Untuk menguji instalasi langsung pada HP demo tanpa komputer:
+### 5. Kompilasi Berkas APK Siap Pakai
+Untuk membuat bundel APK debug mandiri:
 ```bash
 flutter build apk --debug
 ```
-Berkas APK output berada di: `build/app/outputs/flutter-apk/app-debug.apk`.
+Berkas keluaran biner berada di: `build/app/outputs/flutter-apk/app-debug.apk`.
 
 ---
 
-## 🧪 Hasil Pengujian Otomatis
+## 🧪 Jaminan Kualitas & Pengujian Otomatis
 
-Proyek ini dilengkapi rangkaian pengujian unit dan widget otomatis untuk memastikan keandalan fungsi:
+Keandalan seluruh modul diverifikasi melalui rangkaian pengujian unit dan widget otomatis:
 
 ```bash
 flutter test
 ```
-**Hasil:**
+
+### Rekapitulasi Hasil Uji Otomatis
 ```text
 00:15 +119: All tests passed!
 ```
-- **10 Unit Tests:** Algoritma rekomendasi personal on-device (ekstraksi nama, peluruhan waktu, scoring afinitas, penalti diversitas set, cold-start fallback).
-- **5 Unit Tests:** Layanan interaksi SQLite (deduplikasi 30 detik, isolasi multi-user, pemangkasan batas event).
-- **8 Unit Tests:** Layanan konversi 4 zona waktu (WIB, WITA, WIT, London GMT/BST & daylight saving).
-- **5 Unit Tests:** Layanan notifikasi lokal & formatting payload routing.
-- **4 Unit Tests:** Kalkulasi jarak GPS Haversine & validasi LBS.
-- **80+ Unit & Widget Tests:** Enkripsi PBKDF2, simulasi probabilitas pack opening, parser kartu, dan rendering responsif bebas overflow layout pada layar sempit 320dp.
+- **Rekomendasi Cerdas On-Device:** 10 pengujian unit mencakup normalisasi nama Pokémon, peluruhan eksponensial waktu, kedekatan rentang harga, penalti saturasi set, dan mekanisme *cold start*.
+- **Database & Interaksi SQLite:** 5 pengujian unit mencakup deduplikasi log 30 detik, isolasi multitenant lokal, pemangkasan batas 1.000 riwayat, dan pencatatan kuis.
+- **Konversi Finansial & Waktu:** 8 pengujian unit untuk keakuratan kalkulasi 4 zona waktu (WIB, WITA, WIT, London GMT/BST daylight saving) dan konversi mata uang lintas negara.
+- **Layanan Notifikasi & LBS:** 9 pengujian unit mencakup parsing payload routing, pencegahan notifikasi kedaluwarsa, dan kalkulasi jarak geospasial Haversine.
+- **Enkripsi & Layout Responsif:** 80+ pengujian unit dan widget mencakup verifikasi hash PBKDF2, probabilitas buka booster pack, dan ketahanan layout pada layar 320dp dengan skala font besar (bebas *overflow*).
 
 ---
 
-## 🎬 Skenario Pengujian & Panduan Demo Dosen
+## 🗺️ Alur Eksplorasi Fitur (User Journey)
 
-Untuk mendemokan ke-13 ketentuan kepada dosen penguji secara efisien, ikuti alur skenario berikut:
-
-1. **Autentikasi & Biometrik (Ketentuan 2, 3, 4):**
-   - Buka aplikasi → Halaman Splash menampilkan logo HoloDex.
-   - Daftar akun baru di layar Register.
-   - Masuk menggunakan password (demonstrasikan hashing PBKDF2).
-   - Masuk ke tab **Profil** → aktifkan tombol **"Login Sidik Jari"**.
-   - Logout akun → pada layar Login, tekan tombol sidik jari untuk login instan tanpa mengetik password.
-2. **Katalog Kartu & Konversi Mata Uang (Ketentuan 1, 4, 7, 11):**
-   - Pada tab **Dex**, ketuk chip mata uang di header (**IDR**, **USD**, **EUR**, **JPY**) untuk melihat harga kartu berubah secara instan mengikuti kurs ECB terkini.
-   - Gunakan fitur pencarian (misal ketik *"Charizard"* atau *"Pikachu"*), gunakan filter set atau tipe elemen.
-   - Tekan lama pada salah satu kartu untuk mengaktifkan **Mode Multi-Select** → pilih 2 kartu → ketuk ikon ringkasan harga di AppBar untuk melihat total nilai kartu.
-3. **Sensor 1 — Gyroscope Holografik 3D (Ketentuan 8):**
-   - Buka detail kartu berlabel holo (misal kartu foil Charizard atau Dragonite).
-   - Miringkan HP ke kiri, kanan, atas, dan bawah → perhatikan lapisan cahaya holografik bergerak dinamis mengikuti sudut kemiringan fisik perangkat.
-4. **AI Asisten HoloBot (Ketentuan 9):**
-   - Pada halaman detail kartu atau dari tile beranda, buka **"HoloBot"**.
-   - Ajukan pertanyaan seperti *"Apakah kartu ini cocok untuk investasi jangka panjang?"* → HoloBot memberikan analisis berbasis data kartu.
-5. **Sensor 2 & Mini Game — Pack Opening (Ketentuan 8, 10):**
-   - Pada baris fitur di tab Dex, pilih tile **"Mini Game"**.
-   - Guncangkan HP (*shake accelerometer*) atau ketuk tombol buka pack.
-   - Buka kartu satu per satu dengan efek haptic feedback → lihat total nilai IDR pack yang didapatkan dan bandingkan di papan leaderboard.
-6. **Pasar P2P, LBS, & Deskripsi AI (Ketentuan 4, 5, 9):**
-   - Di tab **Pasar**, ketuk ikon peta untuk melihat sebaran penjual terdekat berbasis OpenStreetMap.
-   - Buka tombol **"Jual Kartu"** (buat listing) → gunakan tombol **"Kunci Titik GPS"** untuk menyematkan lokasi COD penjual.
-   - Tekan tombol **"Tulis via AI"** pada kolom deskripsi → AI Gemini secara otomatis menyusun deskripsi promosi barang dagangan yang menarik dan sopan.
-   - Beli listing kartu menggunakan saldo virtual → verifikasi transaksi tersimpan atomik di Supabase dan saldo terpotong akurat.
-7. **Sertifikat Blockchain & Ledger Transaksi (Ketentuan 13):**
-   - Masuk ke detail kartu yang dibeli atau menu **"Buku Besar Blockchain"**.
-   - Tunjukkan hash SHA-256 yang saling mengikat (*hash-chain*) dan tombol **"Lihat di PolygonScan"** untuk membuktikan catatan transaksi terdesentralisasi di Polygon Testnet Amoy. Tampilkan juga modal QR Code untuk pemindaian instan via kamera.
-8. **Fitur Pelengkap & Profil (Ketentuan 6, 7):**
-   - Buka tile **"Konverter & Waktu"** → tunjukkan konversi multi-arah 4 mata uang dan jam digital 4 zona waktu (WIB, WITA, WIT, London GMT/BST) lengkap dengan countdown rilis set baru.
-   - Masuk ke tab **Profil** → ketuk avatar untuk **mengganti foto profil** menggunakan kamera atau galeri ponsel.
-   - Buka tab **Saran & Kesan** → isi masukan dan kesan perkuliahan mata kuliah Pemrograman Aplikasi Mobile.
-9. **AI Rekomendasi On-Device (Fitur Tambahan):**
-   - Tunjukkan Carousel **"Rekomendasi Untuk Kamu"** di beranda yang mempelajari histori pencarian dan klik kartu pengguna secara lokal tanpa internet.
-   - Tunjukkan **Radar Minat Kolektor** di tab Profil beserta tombol **Reset Data Minat**.
+1. **Autentikasi & Keamanan:**
+   - Registrasi pengguna baru dengan pengacakan salt 16-byte.
+   - Masuk akun dan aktifkan tombol **"Login Sidik Jari"** pada tab Profil untuk login instan selanjutnya via biometrik.
+2. **Katalog & Konversi Dinamis:**
+   - Jelajahi katalog kartu di tab **Dex**. Ubah mata uang aktif (**IDR, USD, EUR, JPY**) pada chip header untuk melihat pembaruan harga real-time berbasis kurs ECB.
+   - Gunakan fitur pencarian instan dan filter multi-atribut. Tekan lama kartu untuk mengaktifkan **Mode Multi-Select** guna menghitung akumulasi nilai koleksi kartu.
+3. **Simulasi Sensorik (Holo 3D & Shake Pack):**
+   - Buka kartu berlabel holo pada detail kartu. Miringkan perangkat fisik untuk mengamati pantulan cahaya holografik 3D yang digerakkan sensor giroskop.
+   - Masuk ke menu **"Mini Game"** di beranda Dex. Guncang fisik ponsel (*accelerometer*) untuk membuka booster pack 5 kartu beranimasi.
+4. **Pasar Kolektor & Peta COD:**
+   - Masuk ke tab **Pasar** untuk meninjau listing penjualan kartu.
+   - Buka tampilan peta LBS interaktif untuk memvisualisasikan titik temu COD terdekat dari koordinat pengguna.
+   - Buat listing penjualan kartu, sematkan koordinat GPS lokasi fisik Anda, dan manfaatkan tombol **"Tulis via AI"** untuk membuat narasi deskripsi penjualan otomatis.
+5. **Verifikasi Web3 & Buku Besar Kepemilikan:**
+   - Selesaikan transaksi pembelian di pasar.
+   - Buka menu **"Buku Besar Blockchain"** untuk melihat sertifikat kepemilikan kartu yang tercatat permanen di Polygon Testnet Amoy, lengkap dengan tautan PolygonScan dan QR Code fisik.
+6. **Personalisasi & Kontrol Privasi:**
+   - Amati bagaimana deretan kartu pada carousel **"Untuk Kamu"** di beranda dan lencana **"Cocok"** di pasar beradaptasi secara dinamis mengikuti kartu yang sering Anda lihat.
+   - Masuk ke tab **Profil** untuk melihat visualisasi **Radar Minat Kolektor**, atau tekan tombol **"Reset Data"** kapan saja untuk menghapus seluruh riwayat analitik lokal secara transparan.
 
 ---
+
+## ⚖️ Lisensi & Penafian
+
+- **Hak Cipta Konten:** Hak cipta atas nama Pokémon, ilustrasi kartu, atribut, dan merek dagang Pokémon TCG merupakan hak milik sepenuhnya dari Nintendo, Creatures Inc., dan The Pokémon Company International.
+- **Tujuan Pengembangan:** Proyek ini dikembangkan secara independen sebagai platform edukasi non-komersial dan implementasi rekayasa perangkat lunak mobile modern.
+- **Lisensi Kode:** Seluruh kode sumber dirilis di bawah lisensi terbuka [MIT License](LICENSE).
