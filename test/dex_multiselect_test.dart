@@ -86,9 +86,9 @@ void main() {
 
     await tester.pump();
 
-    // 1. Kondisi normal: Tidak ada mode pilih, judul "HoloDex", tile fitur terlihat
+    // 1. Kondisi normal: Tidak ada mode pilih, logo HoloDex tampil, tile fitur terlihat
     expect(tester.takeException(), isNull);
-    expect(find.text('HoloDex'), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
     expect(find.text('Event'), findsOneWidget);
     expect(find.byIcon(Icons.calendar_month), findsOneWidget);
     expect(find.text('Pikachu'), findsOneWidget);
@@ -115,7 +115,7 @@ void main() {
     await tester.pump();
 
     // 6. Kembali ke mode normal: AppBar normal & baris fitur muncul kembali
-    expect(find.text('HoloDex'), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
     expect(find.text('Event'), findsOneWidget);
     expect(find.byIcon(Icons.calendar_month), findsOneWidget);
   });

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:holodex/app/app.dart';
@@ -11,7 +12,7 @@ void main() {
     );
 
     // Verifikasi bahwa aplikasi render dengan logo HoloDex di splash screen
-    expect(find.text('HoloDex'), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
     expect(find.text('Pokémon TCG Vault & Marketplace'), findsOneWidget);
 
     // Selesaikan timer splash screen

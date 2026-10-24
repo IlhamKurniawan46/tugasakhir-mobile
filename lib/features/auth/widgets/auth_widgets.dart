@@ -29,19 +29,13 @@ class AuthScaffold extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.diamond, color: AppColors.gold, size: 26),
-                      const SizedBox(width: 8),
-                      Text(
-                        'HoloDex',
-                        style: text.titleLarge?.copyWith(
-                          color: AppColors.gold,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.4,
-                        ),
-                      ),
-                    ],
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      height: 22,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                   const SizedBox(height: 40),
                   Text(

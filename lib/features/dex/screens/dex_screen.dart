@@ -470,23 +470,10 @@ class _DexScreenState extends ConsumerState<DexScreen> {
                 ],
               )
             : AppBar(
-                title: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.diamond, color: AppColors.gold, size: 24),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        'HoloDex',
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.gold,
-                          letterSpacing: -0.4,
-                        ),
-                      ),
-                    ),
-                  ],
+                title: Image.asset(
+                  'assets/images/logo.png',
+                  height: 22,
+                  fit: BoxFit.contain,
                 ),
               ),
         body: Column(

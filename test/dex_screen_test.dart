@@ -95,8 +95,8 @@ void main() {
       // Pastikan tidak ada exception layout (overflow dll)
       expect(tester.takeException(), isNull);
 
-      // Verifikasi AppBar bersih (hanya judul, tanpa tombol aksi kalender)
-      expect(find.text('HoloDex'), findsOneWidget);
+      // Verifikasi AppBar bersih (menampilkan logo Image resmi)
+      expect(find.byType(Image), findsWidgets);
       expect(find.byIcon(Icons.tune), findsOneWidget);
 
       // Verifikasi judul section "Katalog" & 4 chip mata uang
@@ -407,7 +407,7 @@ void main() {
       // Kembali ke Dex
       router.go('/');
       await tester.pumpAndSettle();
-      expect(find.text('HoloDex'), findsOneWidget);
+      expect(find.byType(Image), findsWidgets);
 
       // 2. Ketuk tile Konverter -> pindah ke /converter
       await tester.tap(find.text('Konverter'));
@@ -417,7 +417,7 @@ void main() {
       // Kembali ke Dex
       router.go('/');
       await tester.pumpAndSettle();
-      expect(find.text('HoloDex'), findsOneWidget);
+      expect(find.byType(Image), findsWidgets);
 
       // 3. Ketuk tile Mini Game -> pindah ke /pack-opening
       await tester.tap(find.text('Mini Game'));
@@ -427,7 +427,7 @@ void main() {
       // Kembali ke Dex
       router.go('/');
       await tester.pumpAndSettle();
-      expect(find.text('HoloDex'), findsOneWidget);
+      expect(find.byType(Image), findsWidgets);
 
       // 4. Ketuk tile HoloBot -> membuka AiAdvisorSheet (modal bottom sheet)
       await tester.tap(find.text('HoloBot'));

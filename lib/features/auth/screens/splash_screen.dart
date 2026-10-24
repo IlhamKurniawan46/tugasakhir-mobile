@@ -81,44 +81,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo Diamond dengan container bersinar
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: AppColors.gold.withValues(alpha: 0.35),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.gold.withValues(alpha: 0.2),
-                        blurRadius: 32,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.diamond,
-                      color: AppColors.gold,
-                      size: 46,
-                    ),
-                  ),
+                // Logo Resmi Aplikasi
+                Image.asset(
+                  'assets/images/logo.png',
+                  width: 190,
+                  fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 24),
-                // Nama App
-                Text(
-                  'HoloDex',
-                  style: textTheme.headlineMedium?.copyWith(
-                    color: AppColors.gold,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 10),
                 Text(
                   'Pokémon TCG Vault & Marketplace',
                   style: textTheme.bodyMedium?.copyWith(
