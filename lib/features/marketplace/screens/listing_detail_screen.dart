@@ -7,8 +7,10 @@ import '../../../app/theme.dart';
 import '../../../core/models/listing_model.dart';
 import 'dart:convert';
 import '../../../core/services/currency_service.dart';
+import '../../../core/services/interaction_service.dart';
 import '../../../core/services/marketplace_repository.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/services/session_service.dart';
 import '../../../core/services/web3_blockchain_service.dart';
 import '../../../core/utils/price_formatter.dart';
 import '../../../shared/providers/currency_provider.dart';
@@ -41,8 +43,20 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   void initState() {
     super.initState();
     _listing = widget.initialListing;
-    if (_listing == null) {
+    if (_listing != null) {
+      _logListingView(_listing!.cardId);
+    } else {
       _loadDetail();
+    }
+  }
+
+  void _logListingView(String cardId) async {
+    final userId = await SessionService.getActiveUserId();
+    if (userId != null) {
+      await InteractionService.instance.logListingView(
+        userId: userId,
+        cardId: cardId,
+      );
     }
   }
 
@@ -61,6 +75,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
           _isLoading = false;
           if (detail == null) {
             _errorMessage = 'Listing tidak ditemukan atau telah dihapus.';
+          } else {
+            _logListingView(detail.cardId);
           }
         });
       }
@@ -236,6 +252,12 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             buyerId: user.id,
             cardName: listing.card?.name,
           );
+
+      // Catat interaksi pembelian sukses untuk AI rekomendasi personal (bobot 5.0)
+      await InteractionService.instance.logPurchase(
+        userId: user.id,
+        cardId: listing.cardId,
+      );
 
       final onChainTxHash = buyResult['tx_hash'] as String?;
       final tokenId = buyResult['token_id'] as String?;

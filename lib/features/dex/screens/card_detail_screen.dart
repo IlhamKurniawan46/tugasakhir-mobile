@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/card_model.dart';
+import '../../../core/services/interaction_service.dart';
+import '../../../core/services/session_service.dart';
 import '../../../shared/providers/currency_provider.dart';
 import '../providers/card_detail_provider.dart';
 import '../widgets/holo_card_widget.dart';
@@ -26,6 +28,22 @@ class CardDetailScreen extends ConsumerStatefulWidget {
 
 class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   CardDetailArgs get _args => CardDetailArgs(widget.cardId, widget.initialCard);
+
+  @override
+  void initState() {
+    super.initState();
+    _logCardView();
+  }
+
+  void _logCardView() async {
+    final userId = await SessionService.getActiveUserId();
+    if (userId != null) {
+      await InteractionService.instance.logCardView(
+        userId: userId,
+        cardId: widget.cardId,
+      );
+    }
+  }
 
   void _handleWatchlistToggle() async {
     final notifier = ref.read(cardDetailProvider(_args).notifier);

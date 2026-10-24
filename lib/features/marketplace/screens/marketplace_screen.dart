@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/services/marketplace_repository.dart';
+import '../../../core/services/recommendation_engine.dart';
 import '../../../core/utils/price_formatter.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../dex/providers/recommendation_provider.dart';
 import '../providers/marketplace_provider.dart';
 import '../widgets/listing_card.dart';
 
@@ -194,6 +196,26 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                   runSpacing: 8,
                   children: [
                     ChoiceChip(
+                      label: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.auto_awesome, size: 14, color: AppColors.cyan),
+                          SizedBox(width: 4),
+                          Text('Untuk Kamu (AI)'),
+                        ],
+                      ),
+                      selected: state.sortBy == MarketplaceSort.forYou,
+                      showCheckmark: false,
+                      onSelected: (selected) {
+                        if (selected) {
+                          ref
+                              .read(marketplaceProvider.notifier)
+                              .setSortBy(MarketplaceSort.forYou);
+                          Navigator.pop(ctx);
+                        }
+                      },
+                    ),
+                    ChoiceChip(
                       label: const Text('Terbaru'),
                       selected: state.sortBy == MarketplaceSort.newest,
                       showCheckmark: false,
@@ -247,6 +269,16 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
   Widget build(BuildContext context) {
     final marketplaceState = ref.watch(marketplaceProvider);
     final authState = ref.watch(authProvider);
+    final recState = ref.watch(recommendationProvider);
+    final userProfile = recState.profile;
+
+    // Sinkronkan profil minat ke provider pasar untuk pengurutan "Untuk Kamu"
+    if (marketplaceState.userProfile != userProfile) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(marketplaceProvider.notifier).setUserProfile(userProfile);
+      });
+    }
+
     final user = authState.user;
     final textTheme = Theme.of(context).textTheme;
     final filteredListings = marketplaceState.filteredListings;
@@ -577,8 +609,18 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final listing = filteredListings[index];
+                      final isMatch = userProfile != null &&
+                          !userProfile.isColdStart &&
+                          listing.card != null &&
+                          RecommendationEngine.scoreCard(
+                                card: listing.card!,
+                                profile: userProfile,
+                              ).score >=
+                              0.25;
+
                       return ListingCard(
                         listing: listing,
+                        isMatchForYou: isMatch,
                         onTap: () {
                           context.push(
                             '/marketplace/listing/${listing.id}',

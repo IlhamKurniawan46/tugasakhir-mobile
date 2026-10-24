@@ -13,11 +13,13 @@ import '../../../shared/providers/currency_provider.dart';
 class ListingCard extends ConsumerWidget {
   final ListingModel listing;
   final VoidCallback? onTap;
+  final bool isMatchForYou;
 
   const ListingCard({
     super.key,
     required this.listing,
     this.onTap,
+    this.isMatchForYou = false,
   });
 
   @override
@@ -129,6 +131,48 @@ class ListingCard extends ConsumerWidget {
                             ),
                           ),
                         ),
+                        // Badge Rekomendasi "Cocok" di pojok kanan atas
+                        if (isMatchForYou)
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.cyan,
+                                borderRadius: BorderRadius.circular(4),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black45,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.auto_awesome,
+                                    color: Colors.black,
+                                    size: 9,
+                                  ),
+                                  SizedBox(width: 2),
+                                  Text(
+                                    'Cocok',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),

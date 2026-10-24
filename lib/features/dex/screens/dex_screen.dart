@@ -12,6 +12,7 @@ import '../../ai/widgets/ai_advisor_sheet.dart';
 import '../../profile/providers/watchlist_provider.dart';
 import '../providers/dex_provider.dart';
 import '../widgets/card_tile.dart';
+import '../widgets/recommendation_carousel.dart';
 
 /// Padding horizontal bersama untuk seluruh elemen di konten layar Dex
 /// Menjamin tepi kolom pencarian, tile fitur, header katalog, dan grid kartu sejajar presisi.
@@ -731,10 +732,16 @@ class _DexScreenState extends ConsumerState<DexScreen> {
               child: _buildFeatureTiles(context),
             ),
 
-          // 2. Header Bagian Katalog & Selector Mata Uang Kompak
+          // 2. Bagian Rekomendasi Personal AI (Tersembunyi saat multi-select)
+          if (!_isSelectionMode)
+            const SliverToBoxAdapter(
+              child: RecommendationCarousel(),
+            ),
+
+          // 3. Header Bagian Katalog & Selector Mata Uang Kompak
           _buildCatalogHeader(context, selectedCurrency, textTheme),
 
-          // 3. Grid Kartu Katalog / Loading / Error
+          // 4. Grid Kartu Katalog / Loading / Error
           contentSliver,
         ],
       ),

@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../core/models/collection_item_model.dart';
@@ -5,6 +6,7 @@ import '../../../core/services/collection_repository.dart';
 import '../../../core/services/currency_service.dart';
 import '../../../core/services/session_service.dart';
 import '../../../shared/providers/currency_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class CollectionState {
   final List<CollectionItemModel> items;
@@ -66,7 +68,15 @@ class CollectionState {
 }
 
 class CollectionNotifier extends StateNotifier<CollectionState> {
-  CollectionNotifier() : super(const CollectionState(isLoading: true)) {
+  final Ref? ref;
+
+  CollectionNotifier([this.ref]) : super(const CollectionState(isLoading: true)) {
+    ref?.listen<AuthState>(authProvider, (previous, next) {
+      if (previous?.user?.id != next.user?.id) {
+        state = const CollectionState(isLoading: true);
+        loadCollection(forceRefresh: true);
+      }
+    });
     loadCollection();
   }
 
@@ -116,5 +126,5 @@ class CollectionNotifier extends StateNotifier<CollectionState> {
 
 final collectionProvider =
     StateNotifierProvider<CollectionNotifier, CollectionState>((ref) {
-  return CollectionNotifier();
+  return CollectionNotifier(ref);
 });

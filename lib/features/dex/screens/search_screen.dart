@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/services/interaction_service.dart';
+import '../../../core/services/session_service.dart';
 import '../providers/search_provider.dart';
 import '../widgets/card_tile.dart';
 import '../widgets/filter_bottom_sheet.dart';
@@ -17,6 +20,7 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  Timer? _searchDebounceTimer;
 
   @override
   void initState() {
@@ -29,9 +33,39 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String val) {
+    ref.read(searchProvider.notifier).setQuery(val);
+    _searchDebounceTimer?.cancel();
+    final clean = val.trim();
+    if (clean.length >= 3) {
+      _searchDebounceTimer = Timer(const Duration(milliseconds: 800), () {
+        _logSearchInteraction(clean);
+      });
+    }
+  }
+
+  void _onSearchSubmitted(String val) {
+    _searchDebounceTimer?.cancel();
+    final clean = val.trim();
+    if (clean.length >= 3) {
+      _logSearchInteraction(clean);
+    }
+  }
+
+  void _logSearchInteraction(String query) async {
+    final userId = await SessionService.getActiveUserId();
+    if (userId != null) {
+      await InteractionService.instance.logSearch(
+        userId: userId,
+        query: query,
+      );
+    }
   }
 
   void _openFilterBottomSheet() {
@@ -131,9 +165,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               minHeight: 44,
               maxHeight: 44,
             ),
-            onChanged: (val) {
-              ref.read(searchProvider.notifier).setQuery(val);
-            },
+            onChanged: _onSearchChanged,
+            onSubmitted: _onSearchSubmitted,
           ),
         ),
       ),

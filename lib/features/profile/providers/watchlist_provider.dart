@@ -1,9 +1,11 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../core/models/watchlist_item_model.dart';
 import '../../../core/services/collection_repository.dart';
 import '../../../core/services/session_service.dart';
 import '../../../shared/providers/currency_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class WatchlistState {
   final List<WatchlistItemModel> items;
@@ -44,7 +46,15 @@ class WatchlistState {
 }
 
 class WatchlistNotifier extends StateNotifier<WatchlistState> {
-  WatchlistNotifier() : super(const WatchlistState(isLoading: true)) {
+  final Ref? ref;
+
+  WatchlistNotifier([this.ref]) : super(const WatchlistState(isLoading: true)) {
+    ref?.listen<AuthState>(authProvider, (previous, next) {
+      if (previous?.user?.id != next.user?.id) {
+        state = const WatchlistState(isLoading: true);
+        loadWatchlist();
+      }
+    });
     loadWatchlist();
   }
 
@@ -118,5 +128,5 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
 
 final watchlistProvider =
     StateNotifierProvider<WatchlistNotifier, WatchlistState>((ref) {
-  return WatchlistNotifier();
+  return WatchlistNotifier(ref);
 });

@@ -7,12 +7,13 @@ import '../../../core/models/listing_model.dart';
 import '../../../core/models/transaction_model.dart';
 import '../../../core/services/blockchain_repository.dart';
 import '../../../core/services/marketplace_repository.dart';
+import '../../../core/services/recommendation_engine.dart';
 import '../../../core/services/web3_blockchain_service.dart';
 import '../../../core/utils/env_loader.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profile/providers/collection_provider.dart';
 
-enum MarketplaceSort { cheapest, priciest, newest }
+enum MarketplaceSort { cheapest, priciest, newest, forYou }
 
 class MarketplaceState {
   final List<ListingModel> listings;
@@ -22,6 +23,7 @@ class MarketplaceState {
   final String selectedCondition; // 'all', 'mint', 'near_mint', dll.
   final MarketplaceSort sortBy;
   final String? selectedSetId;
+  final UserInterestProfile? userProfile;
 
   const MarketplaceState({
     this.listings = const [],
@@ -31,6 +33,7 @@ class MarketplaceState {
     this.selectedCondition = 'all',
     this.sortBy = MarketplaceSort.newest,
     this.selectedSetId,
+    this.userProfile,
   });
 
   MarketplaceState copyWith({
@@ -41,6 +44,7 @@ class MarketplaceState {
     String? selectedCondition,
     MarketplaceSort? sortBy,
     String? selectedSetId,
+    UserInterestProfile? userProfile,
   }) =>
       MarketplaceState(
         listings: listings ?? this.listings,
@@ -50,6 +54,7 @@ class MarketplaceState {
         selectedCondition: selectedCondition ?? this.selectedCondition,
         sortBy: sortBy ?? this.sortBy,
         selectedSetId: selectedSetId ?? this.selectedSetId,
+        userProfile: userProfile ?? this.userProfile,
       );
 
   /// Mengembalikan listing aktif yang sudah disaring berdasarkan filter dan urutan
@@ -97,6 +102,31 @@ class MarketplaceState {
           return timeB.compareTo(timeA);
         });
         break;
+      case MarketplaceSort.forYou:
+        if (userProfile != null && !userProfile!.isColdStart) {
+          result.sort((a, b) {
+            final double scoreA = a.card != null
+                ? RecommendationEngine.scoreCard(
+                    card: a.card!,
+                    profile: userProfile!,
+                  ).score
+                : 0.0;
+            final double scoreB = b.card != null
+                ? RecommendationEngine.scoreCard(
+                    card: b.card!,
+                    profile: userProfile!,
+                  ).score
+                : 0.0;
+            return scoreB.compareTo(scoreA);
+          });
+        } else {
+          result.sort((a, b) {
+            final timeA = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final timeB = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            return timeB.compareTo(timeA);
+          });
+        }
+        break;
     }
 
     return result;
@@ -141,6 +171,12 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
 
   void setSortBy(MarketplaceSort sort) {
     state = state.copyWith(sortBy: sort);
+  }
+
+  void setUserProfile(UserInterestProfile? profile) {
+    if (state.userProfile != profile) {
+      state = state.copyWith(userProfile: profile);
+    }
   }
 
   void setSetId(String? setId) {

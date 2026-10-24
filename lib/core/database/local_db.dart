@@ -96,6 +96,28 @@ class LocalDb {
         print('[HoloDex Error] Gagal migrasi SQLite v5: $e');
       }
     }
+    if (oldVersion < 6) {
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS user_interactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            card_id TEXT,
+            query_text TEXT,
+            created_at TEXT NOT NULL
+          )
+        ''');
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_interactions_user_id ON user_interactions(user_id)',
+        );
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_interactions_created_at ON user_interactions(created_at)',
+        );
+      } catch (e) {
+        print('[HoloDex Error] Gagal migrasi SQLite v6: $e');
+      }
+    }
   }
 
   static Future<void> _onCreate(Database db, int version) async {
@@ -271,8 +293,22 @@ class LocalDb {
     batch.execute('CREATE INDEX idx_cert_token_id ON card_certificates(token_id)');
     batch.execute('CREATE INDEX idx_cert_tx_hash ON card_certificates(tx_hash)');
 
+    // 13. Interaksi pengguna lokal untuk mesin rekomendasi (Sesi Tambahan AI)
+    batch.execute('''
+      CREATE TABLE user_interactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        card_id TEXT,
+        query_text TEXT,
+        created_at TEXT NOT NULL
+      )
+    ''');
+    batch.execute('CREATE INDEX idx_interactions_user_id ON user_interactions(user_id)');
+    batch.execute('CREATE INDEX idx_interactions_created_at ON user_interactions(created_at)');
+
     await batch.commit(noResult: true);
-    print('[HoloDex] SQLite initialized - semua 12 tabel lokal berhasil dibuat');
+    print('[HoloDex] SQLite initialized - semua 13 tabel lokal berhasil dibuat');
   }
 
   static Future<void> close() async {

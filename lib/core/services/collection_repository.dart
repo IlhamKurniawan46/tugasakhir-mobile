@@ -6,6 +6,7 @@ import '../database/supabase_client.dart';
 import '../models/card_model.dart';
 import '../models/collection_item_model.dart';
 import '../models/watchlist_item_model.dart';
+import 'interaction_service.dart';
 
 /// Repository terpusat untuk Koleksi Saya (Koleksi Fisik - Read-Only) dan Watchlist (Lokal).
 class CollectionRepository {
@@ -264,6 +265,10 @@ class CollectionRepository {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    await InteractionService.instance.logWatchlistAdd(
+      userId: userId,
+      cardId: cardId,
+    );
   }
 
   /// Tambah banyak kartu ke watchlist sekaligus (multi-select mode Dex).
@@ -276,6 +281,7 @@ class CollectionRepository {
     final db = await LocalDb.instance;
 
     int newlyAdded = 0;
+    final addedCardIds = <String>[];
     await db.transaction((txn) async {
       for (final cardId in cardIds) {
         final existing = await txn.query(
@@ -296,9 +302,17 @@ class CollectionRepository {
             },
           );
           newlyAdded++;
+          addedCardIds.add(cardId);
         }
       }
     });
+
+    for (final cardId in addedCardIds) {
+      await InteractionService.instance.logWatchlistAdd(
+        userId: userId,
+        cardId: cardId,
+      );
+    }
 
     return newlyAdded;
   }
