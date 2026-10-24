@@ -115,7 +115,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
     await _performSearch();
   }
 
-  /// Memastikan seluruh 914 kartu dari katalog Supabase di-cache ke SQLite lokal
+  /// Memastikan seluruh kartu dari katalog Supabase di-cache ke SQLite lokal secara dinamis
   Future<void> _ensureDatabaseSeeded() async {
     try {
       final db = await LocalDb.instance;
@@ -125,35 +125,57 @@ class SearchNotifier extends StateNotifier<SearchState> {
 
       state = state.copyWith(totalLocalCount: localCount);
 
-      // Jika cache SQLite kurang dari katalog penuh (914 kartu) dan Supabase aktif
-      if (localCount < 900 && SupabaseService.isInitialized) {
-        debugPrint('[HoloDex] Menyinkronkan seluruh katalog ke SQLite (Lokal: $localCount)...');
+      if (SupabaseService.isInitialized) {
         final client = SupabaseService.client;
-        final response = await client
-            .from('cards')
-            .select()
-            .range(0, 1500)
-            .order('price_ref_usd', ascending: false);
+        final remoteCount = await client.from('cards').count();
 
-        final List<CardModel> allCards = (response as List)
-            .map((item) => CardModel.fromJson(Map<String, dynamic>.from(item)))
-            .toList();
-
-        final batch = db.batch();
-        for (final card in allCards) {
-          batch.insert(
-            'cards',
-            card.toMap(),
-            conflictAlgorithm: ConflictAlgorithm.replace,
+        // Jika ada kartu baru di Supabase yang belum ada di SQLite lokal
+        if (localCount < remoteCount) {
+          debugPrint(
+            '[HoloDex] Menyinkronkan seluruh katalog ke SQLite (Lokal: $localCount, Remote: $remoteCount)...',
           );
+
+          final List<CardModel> allCards = [];
+          int offset = 0;
+          const int batchFetchSize = 1000;
+
+          // PostgREST membatasi maksimal 1000 baris per request, lakukan paginasi
+          while (true) {
+            final response = await client
+                .from('cards')
+                .select()
+                .range(offset, offset + batchFetchSize - 1)
+                .order('price_ref_usd', ascending: false);
+
+            final List<dynamic> rawList = response as List<dynamic>;
+            if (rawList.isEmpty) break;
+
+            for (final item in rawList) {
+              allCards.add(CardModel.fromJson(Map<String, dynamic>.from(item)));
+            }
+
+            if (rawList.length < batchFetchSize) break;
+            offset += batchFetchSize;
+          }
+
+          final batch = db.batch();
+          for (final card in allCards) {
+            batch.insert(
+              'cards',
+              card.toMap(),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+          await batch.commit(noResult: true);
+
+          debugPrint(
+            '[HoloDex] Berhasil sinkronisasi ${allCards.length} kartu ke SQLite',
+          );
+          state = state.copyWith(totalLocalCount: allCards.length);
+
+          // Muat ulang opsi filter dengan data katalog lengkap
+          await _loadFilterOptions();
         }
-        await batch.commit(noResult: true);
-
-        debugPrint('[HoloDex] Berhasil sinkronisasi ${allCards.length} kartu ke SQLite');
-        state = state.copyWith(totalLocalCount: allCards.length);
-
-        // Muat ulang opsi filter dengan data katalog lengkap
-        await _loadFilterOptions();
       }
     } catch (e) {
       debugPrint('[HoloDex Warning] Background sync katalog ke SQLite: $e');
