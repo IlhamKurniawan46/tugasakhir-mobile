@@ -1,5 +1,5 @@
 -- ============================================================
--- HOLODEX — Sesi 2: RPC Autentikasi
+-- RPC Autentikasi
 -- Jalankan di Supabase SQL Editor SETELAH supabase_schema.sql
 -- ============================================================
 -- Tabel users dikunci RLS tanpa policy, jadi anon key tidak bisa

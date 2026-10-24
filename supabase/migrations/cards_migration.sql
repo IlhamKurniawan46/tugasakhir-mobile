@@ -1,5 +1,5 @@
 -- ============================================================
--- HOLODEX — Migrasi Sesi 4: Tambah Kolom price_ref_usd ke Tabel cards
+-- Tambah Kolom price_ref_usd ke Tabel cards
 -- Buka Supabase Dashboard -> SQL Editor -> New Query -> Tempel & Run
 -- ============================================================
 

@@ -216,11 +216,3 @@ flutter test
 6. **Personalisasi & Kontrol Privasi:**
    - Amati bagaimana deretan kartu pada carousel **"Untuk Kamu"** di beranda dan lencana **"Cocok"** di pasar beradaptasi secara dinamis mengikuti kartu yang sering Anda lihat.
    - Masuk ke tab **Profil** untuk melihat visualisasi **Radar Minat Kolektor**, atau tekan tombol **"Reset Data"** kapan saja untuk menghapus seluruh riwayat analitik lokal secara transparan.
-
----
-
-## ⚖️ Lisensi & Penafian
-
-- **Hak Cipta Konten:** Hak cipta atas nama Pokémon, ilustrasi kartu, atribut, dan merek dagang Pokémon TCG merupakan hak milik sepenuhnya dari Nintendo, Creatures Inc., dan The Pokémon Company International.
-- **Tujuan Pengembangan:** Proyek ini dikembangkan secara independen sebagai platform edukasi non-komersial dan implementasi rekayasa perangkat lunak mobile modern.
-- **Lisensi Kode:** Seluruh kode sumber dirilis di bawah lisensi terbuka [MIT License](LICENSE).

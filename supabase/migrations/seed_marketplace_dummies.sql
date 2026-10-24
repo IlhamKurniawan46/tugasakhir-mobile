@@ -1,5 +1,5 @@
 -- ============================================================
--- HOLODEX — Seed 10 Akun Penjual Dummy & Listing Marketplace
+-- Akun Penjual Dummy & Listing Marketplace
 -- Jalankan file ini di Supabase SQL Editor
 -- Mengisi Marketplace & Peta LBS dengan beragam kartu & lokasi kota di Indonesia
 -- ============================================================

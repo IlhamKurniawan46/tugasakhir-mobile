@@ -1,5 +1,5 @@
 -- ============================================================
--- HOLODEX — Sesi 10: Marketplace Peer-to-Peer (P2P) Migration
+-- Marketplace Peer-to-Peer (P2P) Migration
 -- (Tanpa Ledger Blockchain sesuai arahan pengguna)
 -- Jalankan file ini di Supabase SQL Editor
 -- ============================================================

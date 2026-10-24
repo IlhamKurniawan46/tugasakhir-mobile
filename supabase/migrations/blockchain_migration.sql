@@ -1,5 +1,5 @@
 -- ============================================================
--- HOLODEX — Blockchain Provenance & Certificate Migration
+-- Blockchain Provenance & Certificate Migration
 -- Jalankan file ini di Supabase SQL Editor
 -- ============================================================
 

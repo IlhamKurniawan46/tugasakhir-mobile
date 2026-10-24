@@ -1,5 +1,5 @@
 -- ============================================================
--- HOLODEX — Sesi 9: Koleksi (Binder Saya - Read-Only) Migration
+-- Koleksi Migration
 -- Jalankan di Supabase SQL Editor
 -- ============================================================
 

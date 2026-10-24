@@ -1,5 +1,5 @@
 -- ============================================================
--- HOLODEX — Supabase Schema (Sesi 1)
+-- Supabase Schema
 -- Buka Supabase Dashboard -> SQL Editor -> New Query -> Tempel & Run
 -- ============================================================
 
