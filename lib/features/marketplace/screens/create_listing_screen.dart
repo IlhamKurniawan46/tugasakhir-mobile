@@ -86,7 +86,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(explanation),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.snackBarError,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -140,7 +140,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Silakan login terlebih dahulu.'),
-          backgroundColor: AppColors.error,
+          backgroundColor: AppColors.snackBarError,
         ),
       );
       return;
@@ -150,7 +150,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Pilih kartu Pokémon yang ingin dijual terlebih dahulu.'),
-          backgroundColor: AppColors.error,
+          backgroundColor: AppColors.snackBarError,
         ),
       );
       return;
@@ -163,7 +163,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Harga tidak valid.'),
-          backgroundColor: AppColors.error,
+          backgroundColor: AppColors.snackBarError,
         ),
       );
       return;
@@ -196,7 +196,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Listing kartu berhasil dipasang di Pasar!'),
-            backgroundColor: AppColors.success,
+            backgroundColor: AppColors.snackBarSuccess,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -209,7 +209,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorText),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.snackBarError,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -257,7 +257,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal membuat deskripsi via AI: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.snackBarError,
             behavior: SnackBarBehavior.floating,
           ),
         );

@@ -98,7 +98,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         messenger.showSnackBar(
           const SnackBar(
             content: Text('Gagal memperbarui status watchlist.'),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.snackBarError,
           ),
         );
         break;

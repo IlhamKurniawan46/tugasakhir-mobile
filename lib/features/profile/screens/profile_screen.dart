@@ -42,7 +42,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ? 'Login sidik jari berhasil diaktifkan!'
                 : 'Login sidik jari dinonaktifkan.',
           ),
-          backgroundColor: value ? AppColors.success : AppColors.surfaceHighest,
+          backgroundColor: value ? AppColors.snackBarSuccess : AppColors.surfaceHighest,
         ),
       );
     } else {
@@ -51,7 +51,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error),
-          backgroundColor: AppColors.error,
+          backgroundColor: AppColors.snackBarError,
         ),
       );
     }
@@ -122,7 +122,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Riwayat minat berhasil direset.'),
-            backgroundColor: AppColors.success,
+            backgroundColor: AppColors.snackBarSuccess,
             behavior: SnackBarBehavior.floating,
           ),
         );

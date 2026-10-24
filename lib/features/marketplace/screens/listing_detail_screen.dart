@@ -96,7 +96,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Silakan login terlebih dahulu untuk membeli kartu.'),
-          backgroundColor: AppColors.error,
+          backgroundColor: AppColors.snackBarError,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -110,7 +110,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Saldo HoloPay Anda tidak mencukupi.'),
-          backgroundColor: AppColors.error,
+          backgroundColor: AppColors.snackBarError,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -411,7 +411,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Pembelian gagal: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.snackBarError,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -456,23 +456,21 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             sellerId: user.id,
           );
       if (mounted) {
-        setState(() {
-          _listing = _listing?.copyWith(status: 'cancelled');
-        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Listing berhasil dibatalkan.'),
-            backgroundColor: AppColors.success,
+            backgroundColor: AppColors.snackBarSuccess,
             behavior: SnackBarBehavior.floating,
           ),
         );
+        context.pop();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal membatalkan listing: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.snackBarError,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -650,7 +648,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                                         const SnackBar(
                                           content: Text(
                                               'Saldo tidak cukup. Silakan top up di menu pasar.'),
-                                          backgroundColor: AppColors.error,
+                                          backgroundColor: AppColors.snackBarError,
                                           behavior: SnackBarBehavior.floating,
                                         ),
                                       );

@@ -24,6 +24,10 @@ class AppColors {
 
   static const Color error = Color(0xFFFFB4AB);
   static const Color success = Color(0xFF7DDC9A);
+
+  /// Latar belakang SnackBar agar kontras tinggi & nyaman dibaca dengan teks putih (WCAG AAA)
+  static const Color snackBarSuccess = Color(0xFF166534); // Forest Green pekat
+  static const Color snackBarError = Color(0xFF991B1B);   // Crimson Red pekat
 }
 
 class AppTheme {
@@ -138,9 +142,13 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.surfaceHighest,
-        contentTextStyle: GoogleFonts.inter(color: AppColors.onSurface),
+        contentTextStyle: GoogleFonts.inter(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+          fontSize: 13.5,
+        ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusSm),
+          borderRadius: BorderRadius.circular(radiusMd),
         ),
       ),
       dividerColor: AppColors.surfaceHigh,

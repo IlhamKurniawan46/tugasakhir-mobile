@@ -921,7 +921,7 @@ void _showEventReminderSheet(BuildContext context, ReleaseEventModel event) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Izin notifikasi belum diaktifkan di setelan HP.'),
-                      backgroundColor: AppColors.error,
+                      backgroundColor: AppColors.snackBarError,
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -933,7 +933,7 @@ void _showEventReminderSheet(BuildContext context, ReleaseEventModel event) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Event ini sudah lewat. Pengingat hanya untuk event mendatang.'),
-                      backgroundColor: AppColors.error,
+                      backgroundColor: AppColors.snackBarError,
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -961,15 +961,15 @@ void _showEventReminderSheet(BuildContext context, ReleaseEventModel event) {
                   switch (result) {
                     case NotificationScheduleResult.success:
                       message = 'Pengingat rilis berhasil dijadwalkan!';
-                      bgColor = AppColors.success;
+                      bgColor = AppColors.snackBarSuccess;
                       break;
                     case NotificationScheduleResult.pastTime:
                       message = 'Waktu rilis event sudah lewat.';
-                      bgColor = AppColors.error;
+                      bgColor = AppColors.snackBarError;
                       break;
                     case NotificationScheduleResult.error:
                       message = 'Gagal memasang pengingat sistem. Silakan coba opsi Tes Notifikasi 5 Detik.';
-                      bgColor = AppColors.error;
+                      bgColor = AppColors.snackBarError;
                       break;
                   }
 
@@ -1010,7 +1010,7 @@ void _showEventReminderSheet(BuildContext context, ReleaseEventModel event) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Izin notifikasi belum diaktifkan di setelan HP.'),
-                      backgroundColor: AppColors.error,
+                      backgroundColor: AppColors.snackBarError,
                       behavior: SnackBarBehavior.floating,
                     ),
                   );

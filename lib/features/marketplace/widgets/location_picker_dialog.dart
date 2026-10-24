@@ -119,7 +119,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(explanation),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.snackBarError,
             behavior: SnackBarBehavior.floating,
           ),
         );

@@ -120,7 +120,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
               SnackBar(
                 content: Text(
                     'Saldo berhasil ditambah! Saldo saat ini: ${PriceFormatter.formatIdr(newBalance)}'),
-                backgroundColor: AppColors.success,
+                backgroundColor: AppColors.snackBarSuccess,
                 behavior: SnackBarBehavior.floating,
                 duration: const Duration(milliseconds: 2000),
               ),
@@ -131,7 +131,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
             messenger.showSnackBar(
               SnackBar(
                 content: Text('Gagal top up: $e'),
-                backgroundColor: AppColors.error,
+                backgroundColor: AppColors.snackBarError,
                 behavior: SnackBarBehavior.floating,
                 duration: const Duration(milliseconds: 2000),
               ),

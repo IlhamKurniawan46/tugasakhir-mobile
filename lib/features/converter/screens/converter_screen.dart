@@ -123,7 +123,7 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                               : 'Gagal memperbarui kurs online. Menggunakan cache.',
                         ),
                         backgroundColor:
-                            success ? AppColors.surfaceHigh : AppColors.error,
+                            success ? AppColors.snackBarSuccess : AppColors.snackBarError,
                       ),
                     );
                   },

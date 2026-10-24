@@ -131,14 +131,14 @@ class ListingCard extends ConsumerWidget {
                             ),
                           ),
                         ),
-                        // Badge Rekomendasi "Cocok" di pojok kanan atas
+                        // Badge Rekomendasi "Cocok" di pojok kanan bawah gambar (bebas tumpang tindih)
                         if (isMatchForYou)
                           Positioned(
-                            top: 4,
+                            bottom: 4,
                             right: 4,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
+                                horizontal: 6,
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
@@ -146,7 +146,7 @@ class ListingCard extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(4),
                                 boxShadow: const [
                                   BoxShadow(
-                                    color: Colors.black45,
+                                    color: Colors.black54,
                                     blurRadius: 4,
                                     offset: Offset(0, 1),
                                   ),
@@ -158,9 +158,9 @@ class ListingCard extends ConsumerWidget {
                                   Icon(
                                     Icons.auto_awesome,
                                     color: Colors.black,
-                                    size: 9,
+                                    size: 10,
                                   ),
-                                  SizedBox(width: 2),
+                                  SizedBox(width: 3),
                                   Text(
                                     'Cocok',
                                     style: TextStyle(
