@@ -21,6 +21,10 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  /// Radar Minat & Personalisasi AI di profil.
+  /// Ubah menjadi true jika ingin menampilkan visualisasi algoritma.
+  static const bool _showInterestRadar = false;
+
   bool _isTogglingBiometric = false;
 
   Future<void> _handleToggleFingerprint(bool value) async {
@@ -389,8 +393,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 24),
 
           // Profil Minat & Personalisasi (AI On-Device)
-          _buildInterestSection(context, user, textTheme),
-          const SizedBox(height: 24),
+          // Aktifkan _showInterestRadar = true di atas jika ingin menampilkan radar ini ke dosen
+          if (_showInterestRadar) ...[
+            _buildInterestSection(context, user, textTheme),
+            const SizedBox(height: 24),
+          ],
 
           // Pengaturan Keamanan
           Text(
@@ -476,7 +483,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ref.watch(watchlistProvider).items.length;
                     return ListTile(
                       leading: const Icon(Icons.favorite_outline,
-                          color: AppColors.pink),
+                          color: AppColors.gold),
                       title: const Text('Watchlist & Pantauan Harga'),
                       subtitle: Text(
                         '$watchlistCount kartu dipantau',
@@ -516,6 +523,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   title: const Text('Saran & Kesan Mata Kuliah'),
                   trailing: const Icon(Icons.chevron_right, size: 20),
                   onTap: () => context.go('/saran-kesan'),
+                ),
+                const Divider(height: 1, indent: 56),
+                ListTile(
+                  leading: const Icon(Icons.history_toggle_off,
+                      color: AppColors.gold),
+                  title: const Text('Reset Jejak Rekomendasi'),
+                  subtitle: const Text(
+                    'Bersihkan data riwayat minat di perangkat ini',
+                    style: TextStyle(fontSize: 11, color: AppColors.outline),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => _confirmResetInteractions(user.id),
                 ),
               ],
             ),
