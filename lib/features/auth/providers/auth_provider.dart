@@ -202,6 +202,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Perbarui foto profil user aktif di state & SQLite.
+  Future<void> updateUserPhoto(String? photoPath) async {
+    final currentUser = state.user;
+    if (currentUser == null) return;
+
+    await AuthService.updateUserPhoto(currentUser.id, photoPath);
+    state = state.copyWith(
+      user: currentUser.copyWith(photoUrl: photoPath),
+    );
+  }
+
   /// Sinkronisasi profil user terkini dari SQLite / Supabase.
   Future<void> refreshProfile() async {
     final currentUser = state.user;

@@ -227,5 +227,20 @@ class AuthService {
       debugPrint('[HoloDex Error] Gagal update fingerprint di SQLite: $e');
     }
   }
+
+  /// Perbarui path foto profil user di SQLite lokal.
+  static Future<void> updateUserPhoto(String userId, String? photoPath) async {
+    try {
+      final db = await LocalDb.instance;
+      await db.update(
+        'users',
+        {'photo_path': photoPath},
+        where: 'id = ?',
+        whereArgs: [userId],
+      );
+    } catch (e) {
+      debugPrint('[HoloDex Error] Gagal update photo_path di SQLite: $e');
+    }
+  }
 }
 

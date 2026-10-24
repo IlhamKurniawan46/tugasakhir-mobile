@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/user_model.dart';
@@ -26,6 +30,172 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   static const bool _showInterestRadar = false;
 
   bool _isTogglingBiometric = false;
+  bool _isUpdatingPhoto = false;
+
+  Future<void> _pickProfileImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 600,
+        maxHeight: 600,
+        imageQuality: 85,
+      );
+
+      if (pickedFile == null || !mounted) return;
+
+      setState(() => _isUpdatingPhoto = true);
+
+      final user = ref.read(authProvider).user;
+      if (user == null) {
+        setState(() => _isUpdatingPhoto = false);
+        return;
+      }
+
+      // Salin foto ke direktori dokumen aplikasi agar permanen
+      final appDir = await getApplicationDocumentsDirectory();
+      final profilesDir = Directory(p.join(appDir.path, 'profiles'));
+      if (!await profilesDir.exists()) {
+        await profilesDir.create(recursive: true);
+      }
+
+      final fileName =
+          'avatar_${user.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final savedImage =
+          await File(pickedFile.path).copy(p.join(profilesDir.path, fileName));
+
+      // Hapus file foto lama jika ada
+      if (user.photoUrl != null && user.photoUrl!.isNotEmpty) {
+        final oldFile = File(user.photoUrl!);
+        if (await oldFile.exists()) {
+          try {
+            await oldFile.delete();
+          } catch (_) {}
+        }
+      }
+
+      await ref.read(authProvider.notifier).updateUserPhoto(savedImage.path);
+
+      if (mounted) {
+        setState(() => _isUpdatingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Foto profil berhasil diperbarui!'),
+            backgroundColor: AppColors.snackBarSuccess,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUpdatingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memilih foto: $e'),
+            backgroundColor: AppColors.snackBarError,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _removeProfileImage() async {
+    final user = ref.read(authProvider).user;
+    if (user == null) return;
+
+    if (user.photoUrl != null && user.photoUrl!.isNotEmpty) {
+      final oldFile = File(user.photoUrl!);
+      if (await oldFile.exists()) {
+        try {
+          await oldFile.delete();
+        } catch (_) {}
+      }
+    }
+
+    await ref.read(authProvider.notifier).updateUserPhoto(null);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Foto profil berhasil dihapus.'),
+          backgroundColor: AppColors.surfaceHighest,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _showPhotoOptionsBottomSheet(UserModel user) {
+    final textTheme = Theme.of(context).textTheme;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surfaceLow,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceHigh,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Ubah Foto Profil',
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined,
+                    color: AppColors.gold),
+                title: const Text('Ambil dari Kamera'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickProfileImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined,
+                    color: AppColors.cyan),
+                title: const Text('Pilih dari Galeri'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickProfileImage(ImageSource.gallery);
+                },
+              ),
+              if (user.photoUrl != null && user.photoUrl!.isNotEmpty) ...[
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(Icons.delete_outline,
+                      color: AppColors.snackBarError),
+                  title: const Text(
+                    'Hapus Foto Profil',
+                    style: TextStyle(color: AppColors.error),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _removeProfileImage();
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _handleToggleFingerprint(bool value) async {
     setState(() => _isTogglingBiometric = true);
@@ -199,18 +369,79 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 34,
-                  backgroundColor: AppColors.surfaceHigh,
-                  child: Text(
-                    user.username.isNotEmpty
-                        ? user.username[0].toUpperCase()
-                        : 'H',
-                    style: textTheme.headlineSmall?.copyWith(
-                      color: AppColors.gold,
-                      fontWeight: FontWeight.w700,
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    InkWell(
+                      onTap: _isUpdatingPhoto
+                          ? null
+                          : () => _showPhotoOptionsBottomSheet(user),
+                      borderRadius: BorderRadius.circular(36),
+                      child: CircleAvatar(
+                        radius: 36,
+                        backgroundColor: AppColors.surfaceHigh,
+                        backgroundImage: (user.photoUrl != null &&
+                                user.photoUrl!.isNotEmpty &&
+                                File(user.photoUrl!).existsSync())
+                            ? FileImage(File(user.photoUrl!))
+                            : null,
+                        child: _isUpdatingPhoto
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: AppColors.gold,
+                                ),
+                              )
+                            : (user.photoUrl == null ||
+                                    user.photoUrl!.isEmpty ||
+                                    !File(user.photoUrl!).existsSync())
+                                ? Text(
+                                    user.username.isNotEmpty
+                                        ? user.username[0].toUpperCase()
+                                        : 'H',
+                                    style: textTheme.headlineSmall?.copyWith(
+                                      color: AppColors.gold,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  )
+                                : null,
+                      ),
                     ),
-                  ),
+                    Positioned(
+                      bottom: -2,
+                      right: -2,
+                      child: GestureDetector(
+                        onTap: _isUpdatingPhoto
+                            ? null
+                            : () => _showPhotoOptionsBottomSheet(user),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppColors.gold,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.surface,
+                              width: 2,
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black45,
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            size: 13,
+                            color: AppColors.onGold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(width: 16),
                 Expanded(

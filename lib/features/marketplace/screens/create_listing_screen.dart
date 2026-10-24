@@ -74,7 +74,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Titik GPS berhasil dikunci sebagai lokasi COD! ✨'),
+            content: Text('Titik GPS berhasil dikunci sebagai lokasi COD!'),
             backgroundColor: AppColors.surfaceHighest,
             duration: Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
@@ -244,7 +244,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Deskripsi otomatis berhasil dibuat dengan AI! ✨'),
+            content: Text('Deskripsi otomatis berhasil dibuat dengan AI!'),
             backgroundColor: AppColors.surfaceHighest,
             behavior: SnackBarBehavior.floating,
             duration: Duration(seconds: 2),
@@ -583,7 +583,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                           )
                         : const Icon(Icons.auto_awesome, size: 14, color: AppColors.gold),
                     label: Text(
-                      _isGeneratingAiDesc ? 'Membuat...' : 'Tulis via AI ✨',
+                      _isGeneratingAiDesc ? 'Membuat...' : 'Tulis via AI',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,

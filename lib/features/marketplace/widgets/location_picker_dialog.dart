@@ -107,7 +107,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
         _mapController.move(newLoc, 16.0);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Lokasi GPS berhasil ditemukan! ✨'),
+            content: Text('Lokasi GPS berhasil ditemukan!'),
             backgroundColor: AppColors.surfaceHighest,
             duration: Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
