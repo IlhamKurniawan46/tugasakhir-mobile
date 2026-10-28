@@ -491,7 +491,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Kartu masuk ke sini setelah kamu membelinya di Pasar. '
+          'Kartu masuk setelah serah terima dikonfirmasi di titik COD. '
           'Pengguna tidak bisa menambah kartu fisik secara manual.',
           textAlign: TextAlign.center,
           style: TextStyle(

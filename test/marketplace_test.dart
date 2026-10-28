@@ -271,9 +271,42 @@ void main() {
       FlutterError.onError = oldHandler;
 
       expect(find.text('Charizard V'), findsWidgets);
-      expect(find.text('Beli Sekarang'), findsOneWidget);
+      expect(find.text('Pesan'), findsOneWidget);
       expect(find.text('@kolektor_jkt'), findsOneWidget);
       expect(errorDetails, isNull);
+    });
+
+    testWidgets(
+        'ListingDetailScreen with reserved listing renders "Dipesan" disabled button',
+        (tester) async {
+      final reservedListing = sampleListing.copyWith(status: 'reserved');
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith(
+              (ref) => FakeAuthNotifier(
+                const AuthState(
+                  status: AuthStatus.authenticated,
+                  user: testUser,
+                ),
+              ),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: ListingDetailScreen(
+              listingId: 'list-101',
+              initialListing: reservedListing,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(find.text('Dipesan'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets(

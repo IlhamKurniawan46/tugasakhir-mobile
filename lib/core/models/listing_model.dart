@@ -12,7 +12,7 @@ class ListingModel {
   final String? description;
   final double? lat;
   final double? lng;
-  final String status; // 'active', 'sold', 'cancelled'
+  final String status; // 'active', 'reserved', 'sold', 'cancelled'
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -39,6 +39,7 @@ class ListingModel {
   });
 
   bool get isActive => status == 'active';
+  bool get isReserved => status == 'reserved';
   bool get isSold => status == 'sold';
   bool get isCancelled => status == 'cancelled';
 

@@ -17,6 +17,7 @@ import '../features/marketplace/screens/create_listing_screen.dart';
 import '../features/marketplace/screens/listing_detail_screen.dart';
 import '../features/marketplace/screens/map_screen.dart';
 import '../features/marketplace/screens/marketplace_screen.dart';
+import '../features/marketplace/screens/my_orders_screen.dart';
 import '../features/marketplace/screens/transaction_history_screen.dart';
 import '../features/profile/screens/collection_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
@@ -149,6 +150,11 @@ final GoRouter appRouter = GoRouter(
                   builder: (context, state) => const TransactionHistoryScreen(),
                 ),
                 GoRoute(
+                  path: 'orders',
+                  name: 'marketplace-orders',
+                  builder: (context, state) => const MyOrdersScreen(),
+                ),
+                GoRoute(
                   path: 'map',
                   name: 'marketplace-map',
                   builder: (context, state) => const MapScreen(),
@@ -214,6 +220,8 @@ void setupNotificationNavigation() {
         appRouter.push('/dex/card/${data['cardId']}');
       } else if (type == 'marketplace') {
         appRouter.push('/marketplace/transactions');
+      } else if (type == 'orders') {
+        appRouter.push('/marketplace/orders');
       }
     } catch (e) {
       debugPrint('[HoloDex Router] Error handling notification tap: $e');

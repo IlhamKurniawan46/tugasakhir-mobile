@@ -5,18 +5,15 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/listing_model.dart';
-import 'dart:convert';
 import '../../../core/services/currency_service.dart';
 import '../../../core/services/interaction_service.dart';
 import '../../../core/services/marketplace_repository.dart';
-import '../../../core/services/notification_service.dart';
 import '../../../core/services/session_service.dart';
-import '../../../core/services/web3_blockchain_service.dart';
 import '../../../core/utils/price_formatter.dart';
 import '../../../shared/providers/currency_provider.dart';
-import '../../../shared/widgets/blockchain_verification_dialog.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/marketplace_provider.dart';
+import '../providers/order_provider.dart';
 
 class ListingDetailScreen extends ConsumerStatefulWidget {
   final String listingId;
@@ -109,7 +106,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     if (user.balanceIdr < listing.priceIdr) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Saldo HoloPay Anda tidak mencukupi.'),
+          content: Text('Saldo Anda tidak mencukupi untuk memesan kartu ini.'),
           backgroundColor: AppColors.snackBarError,
           behavior: SnackBarBehavior.floating,
         ),
@@ -117,10 +114,28 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       return;
     }
 
-    // Tampilkan BottomSheet Konfirmasi Pembelian
+    final selectedCurrency = ref.read(currencyProvider);
+    String displayPrice;
+    if (selectedCurrency == AppCurrency.idr) {
+      displayPrice = PriceFormatter.formatIdr(listing.priceIdr);
+    } else {
+      final converted = CurrencyService.convert(
+        listing.priceIdr,
+        from: 'IDR',
+        to: selectedCurrency.code,
+      );
+      displayPrice = converted != null
+          ? PriceFormatter.format(converted, selectedCurrency.code)
+          : PriceFormatter.formatIdr(listing.priceIdr);
+    }
+
+    final remainingBalance = user.balanceIdr - listing.priceIdr;
+
+    // Tampilkan BottomSheet Konfirmasi Pemesanan (Rekber COD)
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: AppColors.surface,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -134,11 +149,11 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.shopping_bag_outlined,
+                    const Icon(Icons.lock_clock,
                         color: AppColors.gold, size: 24),
                     const SizedBox(width: 8),
                     Text(
-                      'Konfirmasi Pembelian',
+                      'Pesan Kartu (Rekber COD)',
                       style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -185,17 +200,53 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                           Text('@${listing.sellerUsername ?? 'Penjual'}'),
                         ],
                       ),
-                      const Divider(height: 20),
+                      if (listing.lat != null && listing.lng != null) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Titik COD:'),
+                            Flexible(
+                              child: Text(
+                                '${listing.lat!.toStringAsFixed(4)}, ${listing.lng!.toStringAsFixed(4)}',
+                                style: const TextStyle(
+                                  color: AppColors.cyan,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const Divider(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Total Pembayaran:'),
+                          const Text('Harga Kartu:'),
                           Text(
-                            PriceFormatter.formatIdr(listing.priceIdr),
+                            selectedCurrency == AppCurrency.idr
+                                ? displayPrice
+                                : '$displayPrice (${PriceFormatter.formatIdr(listing.priceIdr)})',
                             style: const TextStyle(
                               color: AppColors.gold,
                               fontWeight: FontWeight.w800,
-                              fontSize: 16,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Sisa Saldo Setelah Ditahan:'),
+                          Text(
+                            PriceFormatter.formatIdr(remainingBalance),
+                            style: const TextStyle(
+                              color: AppColors.onSurface,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -203,12 +254,30 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Kartu ini akan otomatis dipindahkan ke Koleksi Saya dan saldo Anda akan dipotong secara aman via transaksi atomik.',
-                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: AppColors.onSurfaceVariant,
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withAlpha(20),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.gold.withAlpha(60)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.info_outline, size: 16, color: AppColors.gold),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Saldo ditahan sampai kamu mengonfirmasi kartu diterima. Pesanan otomatis batal dalam 72 jam bila tidak ada konfirmasi.',
+                          style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                                height: 1.35,
+                              ),
+                        ),
                       ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -228,7 +297,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                         ),
                         onPressed: () => Navigator.pop(ctx, true),
                         child: const Text(
-                          'Bayar Sekarang',
+                          'Pesan Sekarang',
                           style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -247,38 +316,18 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     setState(() => _isPurchasing = true);
 
     try {
-      final buyResult = await ref.read(marketplaceProvider.notifier).buyListing(
+      await ref.read(orderProvider.notifier).reserveListing(
             listingId: listing.id,
             buyerId: user.id,
-            cardName: listing.card?.name,
           );
-
-      // Catat interaksi pembelian sukses untuk AI rekomendasi personal (bobot 5.0)
-      await InteractionService.instance.logPurchase(
-        userId: user.id,
-        cardId: listing.cardId,
-      );
-
-      final onChainTxHash = buyResult['tx_hash'] as String?;
-      final tokenId = buyResult['token_id'] as String?;
 
       if (mounted) {
         setState(() {
           _isPurchasing = false;
-          _listing = _listing?.copyWith(status: 'sold');
+          _listing = _listing?.copyWith(status: 'reserved');
         });
 
-        // Kirim Notifikasi Transaksi Sukses (Ketentuan #12)
-        NotificationService.instance.showInstantNotification(
-          id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-          title: '🎉 Pembelian Kartu Berhasil!',
-          body:
-              'Kartu ${listing.card?.name ?? 'Pokémon'} (${listing.conditionLabel}) seharga ${PriceFormatter.formatIdr(listing.priceIdr)} berhasil Anda beli dan masuk ke Koleksi Saya.',
-          channelId: NotificationService.channelMarketplace,
-          payload: jsonEncode({'type': 'collection'}),
-        );
-
-        // Dialog Berhasil & Sertifikat Blockchain
+        // Dialog Berhasil Memesan Kartu
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -293,7 +342,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Pembelian Berhasil!',
+                    'Pesanan Berhasil Dibuat!',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -308,74 +357,14 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Kartu ${listing.card?.name ?? ''} telah resmi Anda miliki dan tersimpan di Koleksi Saya.',
-                  style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                  'Saldo Anda sebesar ${PriceFormatter.formatIdr(listing.priceIdr)} telah ditahan dengan aman di sistem Rekber.',
+                  style: const TextStyle(fontSize: 13, color: AppColors.onSurface),
                 ),
-                if (onChainTxHash != null && onChainTxHash.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.cyan.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.cyan.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: const [
-                            Icon(Icons.verified, size: 16, color: AppColors.cyan),
-                            SizedBox(width: 6),
-                            Text(
-                              'Tercatat di Polygon Amoy',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.cyan,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tx: ${Web3BlockchainService.instance.formatShortHash(onChainTxHash)}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                            color: AppColors.cyan,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.gold,
-                              side: const BorderSide(color: AppColors.gold, width: 1),
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                            ),
-                            onPressed: () {
-                              BlockchainVerificationDialog.show(
-                                context,
-                                txHash: onChainTxHash,
-                                tokenId: tokenId,
-                                cardName: listing.card?.name,
-                              );
-                            },
-                            icon: const Icon(Icons.qr_code, size: 16),
-                            label: const Text(
-                              'Lihat QR & PolygonScan',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                const SizedBox(height: 8),
+                Text(
+                  'Temui penjual @${listing.sellerUsername ?? 'Penjual'} di titik COD yang disepakati. Setelah memeriksa fisik kartu, tekan "Sudah Kuterima" di menu Pesanan Saya.',
+                  style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                ),
               ],
             ),
             actionsOverflowButtonSpacing: 8,
@@ -386,7 +375,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   Navigator.pop(ctx);
                   context.pop();
                 },
-                child: const Text('Kembali ke Pasar'),
+                child: const Text('Tutup'),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -397,9 +386,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 onPressed: () {
                   Navigator.pop(ctx);
                   context.pop();
-                  context.push('/collection');
+                  context.push('/marketplace/orders');
                 },
-                child: const Text('Lihat Koleksi'),
+                child: const Text('Lihat Pesanan Saya'),
               ),
             ],
           ),
@@ -410,7 +399,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         setState(() => _isPurchasing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Pembelian gagal: $e'),
+            content: Text('Pemesanan gagal: $e'),
             backgroundColor: AppColors.snackBarError,
             behavior: SnackBarBehavior.floating,
           ),
@@ -526,6 +515,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     final card = listing.card;
     final isOwnListing = user != null && user.id == listing.sellerId;
     final canBuy = listing.isActive &&
+        !listing.isReserved &&
         !isOwnListing &&
         user != null &&
         user.balanceIdr >= listing.priceIdr;
@@ -586,11 +576,15 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       alignment: Alignment.center,
                       child: Text(
-                        listing.isSold
-                            ? 'Kartu ini telah terjual'
-                            : 'Listing ini telah dibatalkan',
-                        style: const TextStyle(
-                          color: AppColors.onSurfaceVariant,
+                        listing.isReserved
+                            ? 'Listing sedang Dipesan oleh Pembeli'
+                            : listing.isSold
+                                ? 'Kartu ini telah terjual'
+                                : 'Listing ini telah dibatalkan',
+                        style: TextStyle(
+                          color: listing.isReserved
+                              ? AppColors.gold
+                              : AppColors.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -639,7 +633,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          onPressed: (_isPurchasing || !listing.isActive)
+                          onPressed: (_isPurchasing || !listing.isActive || listing.isReserved)
                               ? null
                               : (user == null || user.balanceIdr < listing.priceIdr)
                                   ? () {
@@ -666,13 +660,15 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                               : Text(
                                   listing.isSold
                                       ? 'Sudah Terjual'
-                                      : (!listing.isActive)
-                                          ? 'Tidak Tersedia'
-                                          : (user != null &&
-                                                  user.balanceIdr <
-                                                      listing.priceIdr)
-                                              ? 'Saldo Kurang'
-                                              : 'Beli Sekarang',
+                                      : listing.isReserved
+                                          ? 'Dipesan'
+                                          : (!listing.isActive)
+                                              ? 'Tidak Tersedia'
+                                              : (user != null &&
+                                                      user.balanceIdr <
+                                                          listing.priceIdr)
+                                                  ? 'Saldo Kurang'
+                                                  : 'Pesan',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w800,
                                     fontSize: 15,
@@ -985,7 +981,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                         SizedBox(width: 8),
                         Flexible(
                           child: Text(
-                            'Saldo HoloPay Anda:',
+                            'Saldo (simulasi):',
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),

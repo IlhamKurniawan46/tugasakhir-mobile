@@ -9,7 +9,9 @@ import '../../../core/utils/price_formatter.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../dex/providers/recommendation_provider.dart';
 import '../providers/marketplace_provider.dart';
+import '../providers/order_provider.dart';
 import '../widgets/listing_card.dart';
+import 'my_orders_screen.dart';
 
 class MarketplaceScreen extends ConsumerStatefulWidget {
   const MarketplaceScreen({super.key});
@@ -20,18 +22,25 @@ class MarketplaceScreen extends ConsumerStatefulWidget {
 
 class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
   final TextEditingController _searchController = TextEditingController();
+  int _selectedSegment = 0; // 0: Listing Pasar, 1: Pesanan Saya
+  int _orderSubTab = 0; // 0: Pembelian, 1: Penjualan
+  OrderNotifier? _orderNotifier;
 
   @override
   void initState() {
     super.initState();
+    _orderNotifier = ref.read(orderProvider.notifier);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(marketplaceProvider.notifier).loadListings();
       ref.read(authProvider.notifier).refreshProfile();
+      _orderNotifier?.loadOrders();
+      _orderNotifier?.startPolling();
     });
   }
 
   @override
   void dispose() {
+    _orderNotifier?.stopPolling();
     _searchController.dispose();
     super.dispose();
   }
@@ -309,23 +318,28 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.gold,
-        foregroundColor: Colors.black,
-        elevation: 4,
-        icon: const Icon(Icons.add_shopping_cart, size: 20),
-        label: const Text(
-          'Jual Kartu',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-        onPressed: () => context.push('/marketplace/create'),
-      ),
+      floatingActionButton: _selectedSegment == 0
+          ? FloatingActionButton.extended(
+              backgroundColor: AppColors.gold,
+              foregroundColor: Colors.black,
+              elevation: 4,
+              icon: const Icon(Icons.add_shopping_cart, size: 20),
+              label: const Text(
+                'Jual Kartu',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              onPressed: () => context.push('/marketplace/create'),
+            )
+          : null,
       body: RefreshIndicator(
         color: AppColors.gold,
         backgroundColor: AppColors.surface,
         onRefresh: () async {
-          await ref.read(marketplaceProvider.notifier).loadListings(forceRefresh: true);
+          await ref
+              .read(marketplaceProvider.notifier)
+              .loadListings(forceRefresh: true);
           await ref.read(authProvider.notifier).refreshProfile();
+          await ref.read(orderProvider.notifier).loadOrders();
         },
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -423,6 +437,136 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
               ),
             ),
 
+            // Kontrol Segmen: Listing Pasar | Pesanan Saya
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final orderState = ref.watch(orderProvider);
+                    final actionCount = orderState.actionRequiredCount;
+
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceHigh.withAlpha(120),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.surfaceHigh),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(9),
+                              onTap: () {
+                                if (_selectedSegment != 0) {
+                                  setState(() => _selectedSegment = 0);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _selectedSegment == 0
+                                      ? AppColors.gold
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(9),
+                                ),
+                                alignment: Alignment.center,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Listing Pasar',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                      color: _selectedSegment == 0
+                                          ? Colors.black
+                                          : AppColors.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(9),
+                              onTap: () {
+                                if (_selectedSegment != 1) {
+                                  setState(() => _selectedSegment = 1);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _selectedSegment == 1
+                                      ? AppColors.gold
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(9),
+                                ),
+                                alignment: Alignment.center,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Pesanan Saya',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13,
+                                          color: _selectedSegment == 1
+                                              ? Colors.black
+                                              : AppColors.onSurfaceVariant,
+                                        ),
+                                      ),
+                                      if (actionCount > 0) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 1,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _selectedSegment == 1
+                                                ? Colors.black
+                                                : AppColors.gold,
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            '$actionCount',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w800,
+                                              color: _selectedSegment == 1
+                                                  ? AppColors.gold
+                                                  : Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            if (_selectedSegment == 0) ...[
             // Search Bar & Filter Button
             SliverToBoxAdapter(
               child: Padding(
@@ -633,6 +777,10 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                   ),
                 ),
               ),
+            ] else ...[
+              // Tampilan Segmen Pesanan Saya
+              _buildOrdersSegmentSliver(context, textTheme),
+            ],
 
             // Ruang bawah agar tidak tertutup FAB
             const SliverToBoxAdapter(
@@ -641,6 +789,146 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildOrdersSegmentSliver(BuildContext context, TextTheme textTheme) {
+    final orderState = ref.watch(orderProvider);
+    final isBuyerSubTab = _orderSubTab == 0;
+    final orders =
+        isBuyerSubTab ? orderState.buyerOrders : orderState.sellerOrders;
+
+    return SliverMainAxisGroup(
+      slivers: [
+        // Sub-Tab Switch: Pembelian vs Penjualan
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ChoiceChip(
+                    label: Center(
+                      child: Text(
+                        'Pembelian (${orderState.buyerOrders.length})',
+                        style: TextStyle(
+                          color: _orderSubTab == 0
+                              ? Colors.black
+                              : AppColors.onSurface,
+                          fontWeight: _orderSubTab == 0
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    selected: _orderSubTab == 0,
+                    showCheckmark: false,
+                    selectedColor: AppColors.gold,
+                    backgroundColor: AppColors.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(
+                        color: _orderSubTab == 0
+                            ? AppColors.gold
+                            : AppColors.surfaceHigh,
+                      ),
+                    ),
+                    onSelected: (val) {
+                      if (val) setState(() => _orderSubTab = 0);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ChoiceChip(
+                    label: Center(
+                      child: Text(
+                        'Penjualan (${orderState.sellerOrders.length})',
+                        style: TextStyle(
+                          color: _orderSubTab == 1
+                              ? Colors.black
+                              : AppColors.onSurface,
+                          fontWeight: _orderSubTab == 1
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    selected: _orderSubTab == 1,
+                    showCheckmark: false,
+                    selectedColor: AppColors.gold,
+                    backgroundColor: AppColors.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(
+                        color: _orderSubTab == 1
+                            ? AppColors.gold
+                            : AppColors.surfaceHigh,
+                      ),
+                    ),
+                    onSelected: (val) {
+                      if (val) setState(() => _orderSubTab = 1);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (orderState.isLoading && orderState.orders.isEmpty)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(40),
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.gold),
+              ),
+            ),
+          )
+        else if (orders.isEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isBuyerSubTab
+                        ? Icons.shopping_bag_outlined
+                        : Icons.storefront_outlined,
+                    size: 44,
+                    color: AppColors.outline,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    isBuyerSubTab
+                        ? 'Belum ada pesanan pembelian aktif.\nPilih kartu yang kamu minati di Listing Pasar!'
+                        : 'Belum ada pesanan penjualan aktif.\nPasang listing menarik untuk kolektor lain!',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final order = orders[index];
+                  return OrderCardItem(order: order, isBuyer: isBuyerSubTab);
+                },
+                childCount: orders.length,
+              ),
+            ),
+          ),
+      ],
     );
   }
 

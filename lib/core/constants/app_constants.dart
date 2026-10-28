@@ -16,7 +16,7 @@ class AppConstants {
 
   // SQLite Database
   static const String localDbName = 'holodex.db';
-  static const int localDbVersion = 6;
+  static const int localDbVersion = 7;
 
   // Nilai Awal Saldo Baru (Simulasi)
   static const double initialBalanceIdr = 100000.0;

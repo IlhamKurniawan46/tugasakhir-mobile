@@ -118,6 +118,23 @@ class LocalDb {
         print('[HoloDex Error] Gagal migrasi SQLite v6: $e');
       }
     }
+    if (oldVersion < 7) {
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS order_seen (
+            order_id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            last_status TEXT NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_order_seen_user ON order_seen(user_id)',
+        );
+      } catch (e) {
+        print('[HoloDex Error] Gagal migrasi SQLite v7: $e');
+      }
+    }
   }
 
   static Future<void> _onCreate(Database db, int version) async {
@@ -307,8 +324,19 @@ class LocalDb {
     batch.execute('CREATE INDEX idx_interactions_user_id ON user_interactions(user_id)');
     batch.execute('CREATE INDEX idx_interactions_created_at ON user_interactions(created_at)');
 
+    // 14. Pelacakan status pesanan untuk notifikasi polling rekber
+    batch.execute('''
+      CREATE TABLE order_seen (
+        order_id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        last_status TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+    ''');
+    batch.execute('CREATE INDEX idx_order_seen_user ON order_seen(user_id)');
+
     await batch.commit(noResult: true);
-    print('[HoloDex] SQLite initialized - semua 13 tabel lokal berhasil dibuat');
+    print('[HoloDex] SQLite initialized - semua 14 tabel lokal berhasil dibuat');
   }
 
   static Future<void> close() async {

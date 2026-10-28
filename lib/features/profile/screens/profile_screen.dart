@@ -9,11 +9,11 @@ import 'package:path_provider/path_provider.dart';
 import '../../../app/theme.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/services/interaction_service.dart';
-import '../../../core/services/session_service.dart';
 import '../../../core/utils/price_formatter.dart';
 import '../../../shared/providers/currency_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../dex/providers/recommendation_provider.dart';
+import '../../marketplace/providers/order_provider.dart';
 import '../providers/collection_provider.dart';
 import '../providers/watchlist_provider.dart';
 
@@ -491,56 +491,96 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Saldo Virtual
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.surface,
-                  AppColors.surfaceHigh.withValues(alpha: 0.6),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-              border: Border.all(
-                color: AppColors.gold.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Saldo Virtual & Saldo Ditahan
+          Consumer(
+            builder: (context, ref, _) {
+              final orderState = ref.watch(orderProvider);
+              final reservedAmount = orderState.totalReservedAmount;
+
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.surface,
+                      AppColors.surfaceHigh.withValues(alpha: 0.6),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                  border: Border.all(
+                    color: AppColors.gold.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Saldo (simulasi)',
+                          style: textTheme.labelMedium?.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                        const Icon(Icons.wallet, color: AppColors.gold, size: 20),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     Text(
-                      'Saldo Virtual HoloDex',
-                      style: textTheme.labelMedium?.copyWith(
-                        color: AppColors.onSurfaceVariant,
+                      formatIdr(user.balanceIdr),
+                      style: textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.gold,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    const Icon(Icons.wallet, color: AppColors.gold, size: 20),
+                    if (reservedAmount > 0) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceHigh,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: const Color(0xFFF59E0B).withAlpha(120),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.lock_clock,
+                              size: 13,
+                              color: Color(0xFFF59E0B),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Saldo ditahan: ${formatIdr(reservedAmount)}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFF59E0B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    Text(
+                      'Dapat digunakan untuk simulasi transaksi di marketplace.',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: AppColors.outline,
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  formatIdr(user.balanceIdr),
-                  style: textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.gold,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Dapat digunakan untuk simulasi transaksi di marketplace.',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.outline,
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
           const SizedBox(height: 16),
 
@@ -704,6 +744,59 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       trailing: const Icon(Icons.chevron_right, size: 20),
                       onTap: () => context.push('/collection'),
+                    );
+                  },
+                ),
+                const Divider(height: 1, indent: 56),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final orderState = ref.watch(orderProvider);
+                    final actionCount = orderState.actionRequiredCount;
+                    return ListTile(
+                      leading: const Icon(Icons.shopping_bag_outlined,
+                          color: AppColors.gold),
+                      title: const Text('Pesanan Saya (Rekber)'),
+                      subtitle: Text(
+                        actionCount > 0
+                            ? '$actionCount pesanan butuh konfirmasi'
+                            : '${orderState.orders.length} pesanan tercatat',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: actionCount > 0
+                              ? AppColors.gold
+                              : AppColors.outline,
+                          fontWeight: actionCount > 0
+                              ? FontWeight.w700
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (actionCount > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.gold,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '$actionCount',
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.chevron_right, size: 20),
+                        ],
+                      ),
+                      onTap: () => context.push('/marketplace/orders'),
                     );
                   },
                 ),

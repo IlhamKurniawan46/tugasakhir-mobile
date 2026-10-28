@@ -131,8 +131,50 @@ class ListingCard extends ConsumerWidget {
                             ),
                           ),
                         ),
+                        // Badge Lencana Dipesan (Reserved)
+                        if (listing.isReserved)
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF59E0B),
+                                borderRadius: BorderRadius.circular(4),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black54,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.lock_clock,
+                                    color: Colors.black,
+                                    size: 10,
+                                  ),
+                                  SizedBox(width: 3),
+                                  Text(
+                                    'DIPESAN',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         // Badge Rekomendasi "Cocok" di pojok kanan bawah gambar (bebas tumpang tindih)
-                        if (isMatchForYou)
+                        if (isMatchForYou && !listing.isReserved)
                           Positioned(
                             bottom: 4,
                             right: 4,
