@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../core/services/notification_service.dart';
 import '../features/auth/screens/login_screen.dart';
@@ -157,7 +158,19 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                   path: 'map',
                   name: 'marketplace-map',
-                  builder: (context, state) => const MapScreen(),
+                  builder: (context, state) {
+                    final extra = state.extra as Map<String, dynamic>?;
+                    final lat = (extra?['lat'] as num?)?.toDouble();
+                    final lng = (extra?['lng'] as num?)?.toDouble();
+                    return MapScreen(
+                      initialCenter: (lat != null && lng != null)
+                          ? LatLng(lat, lng)
+                          : null,
+                      initialZoom: (extra?['zoom'] as num?)?.toDouble(),
+                      focusedListing: extra?['listing'] as ListingModel?,
+                      title: extra?['title'] as String?,
+                    );
+                  },
                 ),
                 GoRoute(
                   path: 'listing/:id',

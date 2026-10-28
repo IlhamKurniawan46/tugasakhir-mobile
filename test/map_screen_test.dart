@@ -169,5 +169,47 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('MapScreen renders COD initialCenter and focusedListing pin on center of map',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(320, 568));
+
+      const codListing = ListingModel(
+        id: 'order-listing-99',
+        sellerId: 'user-seller-1',
+        sellerUsername: 'penjual_bandung',
+        cardId: 'swsh3-19',
+        card: sampleCard,
+        priceIdr: 250000,
+        condition: 'near_mint',
+        lat: -6.9175,
+        lng: 107.6191,
+        status: 'reserved',
+      );
+
+      await tester.pumpWidget(createTestWidget(
+        child: const MapScreen(
+          initialCenter: LatLng(-6.9175, 107.6191),
+          initialZoom: 15.5,
+          focusedListing: codListing,
+          title: 'Titik COD Pesanan',
+        ),
+        size: const Size(320, 568),
+        textScale: 1.3,
+      ));
+      await tester.pumpAndSettle();
+
+      // Verifikasi judul kustom
+      expect(find.text('Titik COD Pesanan'), findsOneWidget);
+
+      // Verifikasi FAB Titik COD muncul
+      expect(find.byIcon(Icons.handshake_outlined), findsOneWidget);
+
+      // Verifikasi marker handshake titik COD muncul
+      expect(find.byIcon(Icons.handshake), findsWidgets);
+
+      // Verifikasi bottom card listing otomatis muncul
+      expect(find.text('Charizard V'), findsOneWidget);
+    });
   });
 }

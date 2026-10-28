@@ -14,14 +14,37 @@ import '../../../shared/providers/currency_provider.dart';
 import '../providers/map_provider.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
-  const MapScreen({super.key});
+  final LatLng? initialCenter;
+  final double? initialZoom;
+  final ListingModel? focusedListing;
+  final String? title;
+
+  const MapScreen({
+    super.key,
+    this.initialCenter,
+    this.initialZoom,
+    this.focusedListing,
+    this.title,
+  });
 
   @override
   ConsumerState<MapScreen> createState() => _MapScreenState();
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
-  final MapController _mapController = MapController();
+  late final MapController _mapController;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+    if (widget.focusedListing != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(mapStateProvider.notifier).selectListing(widget.focusedListing);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +52,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final listingsWithDistance = ref.watch(mapListingsProvider);
     final selectedListing = mapState.selectedListing;
     final userLoc = mapState.userLocation ?? const LatLng(-6.1754, 106.8272);
+    final centerPoint = widget.initialCenter ?? userLoc;
+    final effectiveZoom = widget.initialZoom ?? (widget.initialCenter != null ? 15.0 : 12.0);
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Peta Penjual Terdekat'),
+        title: Text(widget.title ?? 'Peta Penjual Terdekat'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -49,8 +74,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: userLoc,
-              initialZoom: 12.0,
+              initialCenter: centerPoint,
+              initialZoom: effectiveZoom,
               minZoom: 3.0,
               maxZoom: 18.0,
               onTap: (tapPosition, point) {
@@ -118,46 +143,132 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     final listing = item.listing;
                     final point = LatLng(listing.lat!, listing.lng!);
                     final isSelected = selectedListing?.id == listing.id;
+                    final isCodPoint = widget.initialCenter != null &&
+                        (listing.lat! - widget.initialCenter!.latitude).abs() < 0.0001 &&
+                        (listing.lng! - widget.initialCenter!.longitude).abs() < 0.0001;
 
                     return Marker(
                       point: point,
-                      width: isSelected ? 48 : 38,
-                      height: isSelected ? 48 : 38,
+                      width: (isSelected || isCodPoint) ? 52 : 38,
+                      height: (isSelected || isCodPoint) ? 52 : 38,
                       child: GestureDetector(
                         onTap: () {
                           ref
                               .read(mapStateProvider.notifier)
                               .selectListing(listing);
-                          _mapController.move(point, 14.0);
+                          _mapController.move(point, 15.0);
                         },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.gold : Colors.black87,
+                            color: isCodPoint
+                                ? AppColors.gold
+                                : (isSelected ? AppColors.gold : Colors.black87),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color:
-                                  isSelected ? Colors.black : AppColors.gold,
-                              width: 2,
+                              color: isCodPoint
+                                  ? Colors.redAccent
+                                  : (isSelected ? Colors.black : AppColors.gold),
+                              width: isCodPoint ? 3 : 2,
                             ),
-                            boxShadow: const [
+                            boxShadow: [
                               BoxShadow(
-                                color: Colors.black45,
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
+                                color: isCodPoint
+                                    ? AppColors.gold.withAlpha(180)
+                                    : Colors.black45,
+                                blurRadius: isCodPoint ? 10 : 6,
+                                spreadRadius: isCodPoint ? 2 : 0,
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
                           child: Icon(
-                            Icons.storefront,
-                            size: isSelected ? 26 : 20,
-                            color:
-                                isSelected ? Colors.black : AppColors.gold,
+                            isCodPoint ? Icons.handshake : Icons.storefront,
+                            size: (isSelected || isCodPoint) ? 26 : 20,
+                            color: isCodPoint
+                                ? Colors.black
+                                : (isSelected ? Colors.black : AppColors.gold),
                           ),
                         ),
                       ),
                     );
                   }),
+
+                  // 3. Marker Khusus Focused Listing jika belum ada di daftar listing aktif (misal status reserved)
+                  if (widget.focusedListing != null &&
+                      widget.focusedListing!.lat != null &&
+                      widget.focusedListing!.lng != null &&
+                      !listingsWithDistance.any((item) => item.listing.id == widget.focusedListing!.id)) ...[
+                    Marker(
+                      point: LatLng(widget.focusedListing!.lat!, widget.focusedListing!.lng!),
+                      width: 56,
+                      height: 56,
+                      child: GestureDetector(
+                        onTap: () {
+                          ref
+                              .read(mapStateProvider.notifier)
+                              .selectListing(widget.focusedListing);
+                          _mapController.move(
+                            LatLng(widget.focusedListing!.lat!, widget.focusedListing!.lng!),
+                            15.5,
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.gold,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.redAccent, width: 3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.gold.withAlpha(200),
+                                blurRadius: 12,
+                                spreadRadius: 3,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.handshake,
+                            size: 28,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  // 4. Marker Titik COD Umum jika initialCenter diberikan tanpa focusedListing
+                  if (widget.initialCenter != null &&
+                      widget.focusedListing == null &&
+                      !listingsWithDistance.any((item) =>
+                          (item.listing.lat! - widget.initialCenter!.latitude).abs() < 0.0001 &&
+                          (item.listing.lng! - widget.initialCenter!.longitude).abs() < 0.0001)) ...[
+                    Marker(
+                      point: widget.initialCenter!,
+                      width: 52,
+                      height: 52,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.gold,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.redAccent, width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.gold.withAlpha(180),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.location_on,
+                          size: 28,
+                          color: Colors.redAccent,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -201,6 +312,29 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
             ),
           ),
+
+          // Floating Action Button "Titik COD" (jika parameter initialCenter tersedia)
+          if (widget.initialCenter != null)
+            Positioned(
+              right: 16,
+              bottom: (selectedListing != null ? 180 : 24) + 52,
+              child: FloatingActionButton.small(
+                heroTag: 'map_cod_location_btn',
+                backgroundColor: AppColors.gold,
+                foregroundColor: Colors.black,
+                elevation: 4,
+                tooltip: 'Pusatkan ke Titik COD',
+                onPressed: () {
+                  _mapController.move(widget.initialCenter!, widget.initialZoom ?? 15.5);
+                  if (widget.focusedListing != null) {
+                    ref
+                        .read(mapStateProvider.notifier)
+                        .selectListing(widget.focusedListing);
+                  }
+                },
+                child: const Icon(Icons.handshake_outlined),
+              ),
+            ),
 
           // Floating Action Button "Lokasi Saya"
           Positioned(

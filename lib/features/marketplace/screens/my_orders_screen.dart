@@ -657,48 +657,89 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
                 listing.lat != null &&
                 listing.lng != null) ...[
               const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceHigh.withAlpha(128),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      size: 14,
-                      color: AppColors.gold,
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () {
+                  context.push(
+                    '/marketplace/map',
+                    extra: {
+                      'lat': listing.lat,
+                      'lng': listing.lng,
+                      'zoom': 15.5,
+                      'listing': listing,
+                      'title': 'Titik COD: ${card?.name ?? 'Pesanan'}',
+                    },
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceHigh.withAlpha(140),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.gold.withAlpha(80),
+                      width: 1,
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'COD: ${listing.lat!.toStringAsFixed(4)}, ${listing.lng!.toStringAsFixed(4)}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodySmall?.copyWith(
-                          fontSize: 11,
-                          color: AppColors.onSurfaceVariant,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppColors.gold,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Titik COD: ${listing.lat!.toStringAsFixed(4)}, ${listing.lng!.toStringAsFixed(4)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.bodySmall?.copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.onSurface,
+                              ),
+                            ),
+                            Text(
+                              'Pusatkan ke titik COD di peta',
+                              style: textTheme.labelSmall?.copyWith(
+                                fontSize: 10,
+                                color: AppColors.cyan,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    InkWell(
-                      onTap: () {
-                        context.push('/marketplace/map');
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                        child: Text(
-                          'Lihat Peta',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.cyan,
-                            fontWeight: FontWeight.w700,
-                          ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withAlpha(30),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.gold, width: 1),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.map_outlined, size: 12, color: AppColors.gold),
+                            SizedBox(width: 4),
+                            Text(
+                              'Lihat Peta',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.gold,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],

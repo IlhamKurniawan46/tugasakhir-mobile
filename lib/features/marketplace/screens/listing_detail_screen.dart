@@ -907,23 +907,82 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   ),
                   if (listing.lat != null && listing.lng != null) ...[
                     const Divider(height: 20),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 16,
-                          color: AppColors.gold,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'Koordinat COD: ${listing.lat!.toStringAsFixed(4)}, ${listing.lng!.toStringAsFixed(4)}',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: AppColors.onSurfaceVariant,
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        context.push(
+                          '/marketplace/map',
+                          extra: {
+                            'lat': listing.lat,
+                            'lng': listing.lng,
+                            'zoom': 15.5,
+                            'listing': listing,
+                            'title': 'Titik COD: ${listing.card?.name ?? 'Penjual'}',
+                          },
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: AppColors.gold,
                             ),
-                          ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Koordinat COD: ${listing.lat!.toStringAsFixed(4)}, ${listing.lng!.toStringAsFixed(4)}',
+                                    style: textTheme.bodySmall?.copyWith(
+                                      color: AppColors.onSurface,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Ketuk untuk lihat posisi di peta',
+                                    style: textTheme.labelSmall?.copyWith(
+                                      color: AppColors.cyan,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.gold.withAlpha(30),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppColors.gold, width: 1),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.map_outlined, size: 12, color: AppColors.gold),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Buka Peta',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.gold,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ],
