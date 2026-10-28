@@ -67,7 +67,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pesanan Rekber'),
+        title: const Text('Pesanan'),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.gold,
@@ -912,8 +912,8 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
                 width: double.infinity,
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF25D366),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: AppColors.onGold,
                     minimumSize: const Size(0, 42),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusMd),
@@ -926,7 +926,7 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                                AlwaysStoppedAnimation<Color>(AppColors.onGold),
                           ),
                         )
                       : const Icon(Icons.chat_bubble_outline, size: 16),

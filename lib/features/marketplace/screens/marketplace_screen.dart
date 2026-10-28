@@ -295,7 +295,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Marketplace HoloDex',
+          'Marketplace',
           style: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
             color: AppColors.gold,

@@ -687,56 +687,59 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               border: Border.all(color: AppColors.surfaceHigh),
             ),
-            child: Column(
-              children: [
-                SwitchListTile(
-                  secondary: const Icon(
-                    Icons.fingerprint,
-                    color: AppColors.gold,
-                  ),
-                  title: const Text('Login Sidik Jari (Biometrik)'),
-                  subtitle: Text(
-                    user.fingerprintEnabled
-                        ? 'Aktif - Buka aplikasi dengan sensor sidik jari'
-                        : 'Nonaktif - Masuk menggunakan password',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: AppColors.onSurfaceVariant,
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    secondary: const Icon(
+                      Icons.fingerprint,
+                      color: AppColors.gold,
                     ),
+                    title: const Text('Login Sidik Jari (Biometrik)'),
+                    subtitle: Text(
+                      user.fingerprintEnabled
+                          ? 'Aktif - Buka aplikasi dengan sensor sidik jari'
+                          : 'Nonaktif - Masuk menggunakan password',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    value: user.fingerprintEnabled,
+                    onChanged: _isTogglingBiometric
+                        ? null
+                        : (val) => _handleToggleFingerprint(val),
                   ),
-                  value: user.fingerprintEnabled,
-                  onChanged: _isTogglingBiometric
-                      ? null
-                      : (val) => _handleToggleFingerprint(val),
-                ),
-                const Divider(height: 1, indent: 56),
-                ListTile(
-                  leading: const Icon(
-                    Icons.chat_outlined,
-                    color: Color(0xFF25D366),
-                  ),
-                  title: const Text('Nomor WhatsApp (Koordinasi COD)'),
-                  subtitle: Text(
-                    user.whatsappNumber != null &&
-                            user.whatsappNumber!.trim().isNotEmpty
-                        ? 'Tersimpan (${WhatsAppHelper.maskPhoneNumber(user.whatsappNumber)})'
-                        : 'Belum diatur (Wajib sebelum pesan / jual)',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: user.whatsappNumber != null &&
+                  const Divider(height: 1, indent: 56),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.chat_outlined,
+                      color: AppColors.gold,
+                    ),
+                    title: const Text('Nomor WhatsApp (Koordinasi COD)'),
+                    subtitle: Text(
+                      user.whatsappNumber != null &&
                               user.whatsappNumber!.trim().isNotEmpty
-                          ? AppColors.onSurfaceVariant
-                          : AppColors.gold,
-                      fontSize: 11,
+                          ? 'Tersimpan (${WhatsAppHelper.maskPhoneNumber(user.whatsappNumber)})'
+                          : 'Belum diatur (Wajib sebelum pesan / jual)',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: user.whatsappNumber != null &&
+                                user.whatsappNumber!.trim().isNotEmpty
+                            ? AppColors.onSurfaceVariant
+                            : AppColors.gold,
+                        fontSize: 11,
+                      ),
                     ),
+                    trailing: const Icon(Icons.chevron_right, size: 20),
+                    onTap: () {
+                      WhatsAppDialog.show(
+                        context,
+                        initialPhone: user.whatsappNumber,
+                      );
+                    },
                   ),
-                  trailing: const Icon(Icons.chevron_right, size: 20),
-                  onTap: () {
-                    WhatsAppDialog.show(
-                      context,
-                      initialPhone: user.whatsappNumber,
-                    );
-                  },
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -784,7 +787,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     return ListTile(
                       leading: const Icon(Icons.shopping_bag_outlined,
                           color: AppColors.gold),
-                      title: const Text('Pesanan Saya (Rekber)'),
+                      title: const Text('Pesanan Saya'),
                       subtitle: Text(
                         actionCount > 0
                             ? '$actionCount pesanan butuh konfirmasi'

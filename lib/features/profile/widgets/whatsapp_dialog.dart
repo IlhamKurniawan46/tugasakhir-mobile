@@ -116,12 +116,12 @@ class _WhatsAppDialogState extends ConsumerState<WhatsAppDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF25D366).withAlpha(40),
+              color: AppColors.gold.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.phone_android,
-              color: Color(0xFF25D366),
+              color: AppColors.gold,
               size: 22,
             ),
           ),
@@ -207,8 +207,8 @@ class _WhatsAppDialogState extends ConsumerState<WhatsAppDialog> {
         FilledButton(
           onPressed: _isLoading ? null : _handleSave,
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF25D366),
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.gold,
+            foregroundColor: AppColors.onGold,
             minimumSize: const Size(0, 42),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusMd),
@@ -220,7 +220,7 @@ class _WhatsAppDialogState extends ConsumerState<WhatsAppDialog> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.onGold),
                   ),
                 )
               : const Text('Simpan'),
