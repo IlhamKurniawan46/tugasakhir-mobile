@@ -38,6 +38,14 @@ class OrderRepository {
         return 'Anda tidak memiliki hak untuk melakukan tindakan ini.';
       case 'INVALID_ORDER_STATUS':
         return 'Status pesanan sudah berubah (mungkin telah dibatalkan atau selesai).';
+      case 'whatsapp_required':
+        return 'Nomor WhatsApp wajib diisi terlebih dahulu sebelum melanjutkan transaksi agar dapat berkoordinasi COD.';
+      case 'not_allowed':
+        return 'Kontak WhatsApp hanya dapat diakses saat status pesanan masih aktif (Dipesan).';
+      case 'no_contact':
+        return 'Pihak lawan belum mengisi nomor WhatsApp.';
+      case 'INVALID_PHONE_NUMBER':
+        return 'Format nomor WhatsApp tidak valid. Gunakan format nomor Indonesia (contoh: 081234567890).';
       case 'ORDER_EXPIRED':
         return 'Waktu pesanan ini telah melewati batas 72 jam dan telah kedaluwarsa.';
       case 'BUYER_NOT_FOUND':
@@ -233,5 +241,107 @@ class OrderRepository {
       return [];
     }
   }
+
+  /// Mengambil kontak WhatsApp pihak lawan untuk pesanan aktif (status reserved)
+  static Future<OrderContactResult> getOrderContact({
+    required String orderId,
+    required String userId,
+  }) async {
+    if (!SupabaseService.isInitialized) {
+      throw const OrderFailure('Tidak terhubung ke server database online.');
+    }
+
+    try {
+      final response = await _client.rpc(
+        'get_order_contact',
+        params: {
+          'p_order_id': orderId,
+          'p_user_id': userId,
+        },
+      );
+
+      final Map<String, dynamic> result =
+          Map<String, dynamic>.from(response as Map);
+
+      return OrderContactResult.fromJson(result);
+    } on PostgrestException catch (e) {
+      debugPrint('[HoloDex Error] get_order_contact postgrest: ${e.message}');
+      throw OrderFailure(e.message);
+    } catch (e) {
+      if (e is OrderFailure) rethrow;
+      debugPrint('[HoloDex Error] getOrderContact exception: $e');
+      throw const OrderFailure('Gagal mengambil kontak WhatsApp pihak lawan.');
+    }
+  }
+
+  /// Menyimpan atau menghapus nomor WhatsApp pengguna milik sendiri
+  static Future<String?> setMyWhatsapp({
+    required String userId,
+    required String? phoneNumber,
+  }) async {
+    if (!SupabaseService.isInitialized) {
+      throw const OrderFailure('Tidak terhubung ke server database online.');
+    }
+
+    try {
+      final response = await _client.rpc(
+        'set_my_whatsapp',
+        params: {
+          'p_user_id': userId,
+          'p_number': phoneNumber,
+        },
+      );
+
+      final Map<String, dynamic> result =
+          Map<String, dynamic>.from(response as Map);
+
+      if (result['ok'] == true) {
+        return result['whatsapp_number'] as String?;
+      } else {
+        final errCode = result['error_code'] as String?;
+        final errMsg = mapErrorCodeToMessage(errCode, result['error'] as String?);
+        throw OrderFailure(errMsg, errCode);
+      }
+    } on PostgrestException catch (e) {
+      debugPrint('[HoloDex Error] set_my_whatsapp postgrest: ${e.message}');
+      throw OrderFailure(e.message);
+    } catch (e) {
+      if (e is OrderFailure) rethrow;
+      debugPrint('[HoloDex Error] setMyWhatsapp exception: $e');
+      throw const OrderFailure('Gagal menyimpan nomor WhatsApp.');
+    }
+  }
+}
+
+/// Model hasil pemanggilan kontak pesanan
+class OrderContactResult {
+  final bool ok;
+  final String? orderId;
+  final String? role;
+  final String? displayName;
+  final String? whatsappNumber;
+  final String? errorCode;
+  final String? message;
+
+  const OrderContactResult({
+    required this.ok,
+    this.orderId,
+    this.role,
+    this.displayName,
+    this.whatsappNumber,
+    this.errorCode,
+    this.message,
+  });
+
+  factory OrderContactResult.fromJson(Map<String, dynamic> json) =>
+      OrderContactResult(
+        ok: json['ok'] == true,
+        orderId: json['order_id'] as String?,
+        role: json['role'] as String?,
+        displayName: json['display_name'] as String?,
+        whatsappNumber: json['whatsapp_number'] as String?,
+        errorCode: json['error_code'] as String?,
+        message: json['error'] as String? ?? json['message'] as String?,
+      );
 }
 

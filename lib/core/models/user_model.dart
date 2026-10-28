@@ -5,6 +5,7 @@ class UserModel {
   final String? photoUrl;
   final double balanceIdr;
   final bool fingerprintEnabled;
+  final String? whatsappNumber;
   final DateTime? createdAt;
 
   const UserModel({
@@ -14,6 +15,7 @@ class UserModel {
     this.photoUrl,
     this.balanceIdr = 0,
     this.fingerprintEnabled = false,
+    this.whatsappNumber,
     this.createdAt,
   });
 
@@ -24,6 +26,8 @@ class UserModel {
     String? photoUrl,
     double? balanceIdr,
     bool? fingerprintEnabled,
+    String? whatsappNumber,
+    bool resetWhatsappNumber = false,
     DateTime? createdAt,
   }) =>
       UserModel(
@@ -33,10 +37,13 @@ class UserModel {
         photoUrl: photoUrl ?? this.photoUrl,
         balanceIdr: balanceIdr ?? this.balanceIdr,
         fingerprintEnabled: fingerprintEnabled ?? this.fingerprintEnabled,
+        whatsappNumber: resetWhatsappNumber
+            ? null
+            : (whatsappNumber ?? this.whatsappNumber),
         createdAt: createdAt ?? this.createdAt,
       );
 
-  /// Dari respons Supabase (RPC register_user / get_login_credentials).
+  /// Dari respons Supabase (RPC register_user / get_login_credentials / get_user_profile).
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
         id: json['id'] as String,
         username: json['username'] as String,
@@ -44,6 +51,7 @@ class UserModel {
         photoUrl: json['photo_url'] as String?,
         balanceIdr: (json['balance_idr'] as num?)?.toDouble() ?? 0,
         fingerprintEnabled: json['fingerprint_enabled'] as bool? ?? false,
+        whatsappNumber: json['whatsapp_number'] as String?,
         createdAt: json['created_at'] == null
             ? null
             : DateTime.tryParse(json['created_at'] as String),
@@ -56,6 +64,7 @@ class UserModel {
         'photo_url': photoUrl,
         'balance_idr': balanceIdr,
         'fingerprint_enabled': fingerprintEnabled,
+        'whatsapp_number': whatsappNumber,
         'created_at': createdAt?.toIso8601String(),
       };
 

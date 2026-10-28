@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/order_model.dart';
 import '../../../core/services/currency_service.dart';
+import '../../../core/services/order_repository.dart';
 import '../../../core/utils/price_formatter.dart';
+import '../../../core/utils/whatsapp_helper.dart';
 import '../../../shared/providers/currency_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/order_provider.dart';
@@ -273,7 +277,11 @@ class _OrderListView extends StatelessWidget {
       itemCount: orders.length,
       itemBuilder: (context, index) {
         final order = orders[index];
-        return OrderCardItem(order: order, isBuyer: isBuyerList);
+        return OrderCardItem(
+          key: ValueKey(order.id),
+          order: order,
+          isBuyer: isBuyerList,
+        );
       },
     );
   }
@@ -296,6 +304,99 @@ class OrderCardItem extends ConsumerStatefulWidget {
 
 class _OrderCardItemState extends ConsumerState<OrderCardItem> {
   bool _isProcessing = false;
+  bool _isContacting = false;
+
+  Future<void> _handleContactWhatsApp() async {
+    final user = ref.read(authProvider).user;
+    if (user == null) return;
+
+    setState(() => _isContacting = true);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final contactResult = await OrderRepository.getOrderContact(
+        orderId: widget.order.id,
+        userId: user.id,
+      );
+
+      if (!mounted) return;
+
+      if (!contactResult.ok || contactResult.whatsappNumber == null) {
+        final errText = contactResult.message ??
+            (contactResult.errorCode == 'no_contact'
+                ? 'Pihak lawan (@${widget.order.otherPartyUsername ?? 'Lawan'}) belum mengisi nomor WhatsApp.'
+                : 'Kontak WhatsApp hanya dapat diakses saat pesanan masih aktif.');
+
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(errText),
+            backgroundColor: AppColors.snackBarError,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      final phone = contactResult.whatsappNumber!;
+      final cardName = widget.order.card?.name ?? 'Kartu Pokémon';
+      final shortId = WhatsAppHelper.getShortOrderId(widget.order.id);
+      final loc = widget.order.listing?.lat != null
+          ? '${widget.order.listing!.lat!.toStringAsFixed(4)}, ${widget.order.listing!.lng!.toStringAsFixed(4)}'
+          : 'titik COD yang disepakati';
+
+      final message = WhatsAppHelper.buildInitialCodMessage(
+        myName: user.username,
+        cardName: cardName,
+        shortOrderId: shortId,
+        codLocation: loc,
+      );
+
+      final uri = WhatsAppHelper.buildWhatsAppUri(phone: phone, message: message);
+
+      bool launched = false;
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        launched = false;
+      }
+
+      if (!launched && mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Tidak dapat membuka WhatsApp (${WhatsAppHelper.formatDisplayPhone(phone)})'),
+            backgroundColor: AppColors.surfaceHigh,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Salin Nomor',
+              textColor: AppColors.gold,
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: phone));
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Nomor WhatsApp disalin ke clipboard!'),
+                    backgroundColor: AppColors.snackBarSuccess,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Gagal menghubungi: $e'),
+            backgroundColor: AppColors.snackBarError,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isContacting = false);
+    }
+  }
 
   Future<void> _handleConfirmReceipt() async {
     final user = ref.read(authProvider).user;
@@ -386,54 +487,18 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
     final user = ref.read(authProvider).user;
     if (user == null) return;
 
-    final reasonController = TextEditingController();
-
-    final confirmed = await showDialog<bool>(
+    // Tampilkan dialog pembatalan mandiri yang mengelola siklus hidup controller-nya sendiri
+    final reason = await showDialog<String?>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text('Batalkan Pesanan?'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.isBuyer
-                  ? 'Saldo tertahan sebesar ${PriceFormatter.formatIdr(widget.order.amountIdr)} akan langsung dikembalikan utuh ke akun Anda, dan listing kartu kembali aktif.'
-                  : 'Pesanan akan dibatalkan, saldo akan dikembalikan ke pembeli, dan listing kartu Anda akan kembali aktif di Pasar.',
-              style: const TextStyle(fontSize: 13, color: AppColors.onSurface),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: reasonController,
-              decoration: const InputDecoration(
-                labelText: 'Alasan pembatalan (opsional)',
-                hintText: 'Contoh: Jadwal COD tidak cocok',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Kembali'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Ya, Batalkan'),
-          ),
-        ],
+      barrierDismissible: true,
+      builder: (ctx) => _CancelOrderDialog(
+        isBuyer: widget.isBuyer,
+        amountIdr: widget.order.amountIdr,
       ),
     );
 
-    final reason = reasonController.text.trim();
-    reasonController.dispose();
-
-    if (confirmed != true) return;
+    // Jika pengguna membatalkan dialog (tekan Kembali atau luar dialog)
+    if (reason == null) return;
     if (!mounted) return;
 
     setState(() => _isProcessing = true);
@@ -758,6 +823,65 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
               ),
             ],
 
+            // Tombol Kontak WhatsApp (Hanya saat status reserved)
+            if (order.isReserved) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF25D366),
+                    foregroundColor: Colors.white,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  icon: _isContacting
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.chat_bubble_outline, size: 16),
+                  label: Text(
+                    _isContacting
+                        ? 'Menghubungkan...'
+                        : 'Hubungi via WhatsApp',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  onPressed: _isContacting ? null : _handleContactWhatsApp,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.security,
+                    size: 13,
+                    color: AppColors.outline,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Bertemu di tempat umum dan periksa kartu sebelum menekan "Sudah kuterima".',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AppColors.outline,
+                        fontSize: 10,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
             // Tombol Aksi (Hanya jika masih reserved)
             if (canConfirm || canCancel) ...[
               const SizedBox(height: 12),
@@ -920,6 +1044,80 @@ class _CountdownBadgeState extends State<_CountdownBadge> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Dialog Pembatalan Pesanan dengan Pengelolaan Controller Mandiri
+class _CancelOrderDialog extends StatefulWidget {
+  final bool isBuyer;
+  final double amountIdr;
+
+  const _CancelOrderDialog({
+    required this.isBuyer,
+    required this.amountIdr,
+  });
+
+  @override
+  State<_CancelOrderDialog> createState() => _CancelOrderDialogState();
+}
+
+class _CancelOrderDialogState extends State<_CancelOrderDialog> {
+  late final TextEditingController _reasonController;
+
+  @override
+  void initState() {
+    super.initState();
+    _reasonController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.surface,
+      title: const Text('Batalkan Pesanan?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.isBuyer
+                ? 'Saldo tertahan sebesar ${PriceFormatter.formatIdr(widget.amountIdr)} akan langsung dikembalikan utuh ke akun Anda, dan listing kartu kembali aktif.'
+                : 'Pesanan akan dibatalkan, saldo akan dikembalikan ke pembeli, dan listing kartu Anda akan kembali aktif di Pasar.',
+            style: const TextStyle(fontSize: 13, color: AppColors.onSurface),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _reasonController,
+            decoration: const InputDecoration(
+              labelText: 'Alasan pembatalan (opsional)',
+              hintText: 'Contoh: Jadwal COD tidak cocok',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          child: const Text('Kembali'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.error,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () {
+            Navigator.pop(context, _reasonController.text.trim());
+          },
+          child: const Text('Ya, Batalkan'),
+        ),
+      ],
     );
   }
 }

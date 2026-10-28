@@ -10,12 +10,14 @@ import '../../../app/theme.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/services/interaction_service.dart';
 import '../../../core/utils/price_formatter.dart';
+import '../../../core/utils/whatsapp_helper.dart';
 import '../../../shared/providers/currency_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../dex/providers/recommendation_provider.dart';
 import '../../marketplace/providers/order_provider.dart';
 import '../providers/collection_provider.dart';
 import '../providers/watchlist_provider.dart';
+import '../widgets/whatsapp_dialog.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -706,6 +708,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onChanged: _isTogglingBiometric
                       ? null
                       : (val) => _handleToggleFingerprint(val),
+                ),
+                const Divider(height: 1, indent: 56),
+                ListTile(
+                  leading: const Icon(
+                    Icons.chat_outlined,
+                    color: Color(0xFF25D366),
+                  ),
+                  title: const Text('Nomor WhatsApp (Koordinasi COD)'),
+                  subtitle: Text(
+                    user.whatsappNumber != null &&
+                            user.whatsappNumber!.trim().isNotEmpty
+                        ? 'Tersimpan (${WhatsAppHelper.maskPhoneNumber(user.whatsappNumber)})'
+                        : 'Belum diatur (Wajib sebelum pesan / jual)',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: user.whatsappNumber != null &&
+                              user.whatsappNumber!.trim().isNotEmpty
+                          ? AppColors.onSurfaceVariant
+                          : AppColors.gold,
+                      fontSize: 11,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () {
+                    WhatsAppDialog.show(
+                      context,
+                      initialPhone: user.whatsappNumber,
+                    );
+                  },
                 ),
               ],
             ),

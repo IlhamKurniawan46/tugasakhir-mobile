@@ -12,6 +12,7 @@ import '../../../core/services/session_service.dart';
 import '../../../core/utils/price_formatter.dart';
 import '../../../shared/providers/currency_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../profile/widgets/whatsapp_dialog.dart';
 import '../providers/marketplace_provider.dart';
 import '../providers/order_provider.dart';
 
@@ -102,6 +103,32 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
 
     final listing = _listing;
     if (listing == null) return;
+
+    // Pengecekan Just-in-Time: Pembeli wajib memiliki nomor WhatsApp untuk koordinasi COD
+    if (user.whatsappNumber == null || user.whatsappNumber!.trim().isEmpty) {
+      final savedPhone = await WhatsAppDialog.show(
+        context,
+        customTitle: 'Nomor WhatsApp Pembeli',
+        customExplanation:
+            'Nomor WhatsApp diperlukan agar penjual dapat menghubungi kamu untuk koordinasi serah terima COD.',
+      );
+
+      if (savedPhone == null || savedPhone.trim().isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Pemesanan dibatalkan: Nomor WhatsApp wajib diisi untuk koordinasi COD.'),
+              backgroundColor: AppColors.surfaceHigh,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    if (!mounted) return;
 
     if (user.balanceIdr < listing.priceIdr) {
       ScaffoldMessenger.of(context).showSnackBar(

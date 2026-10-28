@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/legacy.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/biometric_service.dart';
+import '../../../core/services/marketplace_repository.dart';
+import '../../../core/services/order_repository.dart';
 import '../../../core/services/session_service.dart';
 
 enum AuthStatus { idle, loading, authenticated, error }
@@ -213,16 +215,35 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  /// Sinkronisasi profil user terkini dari SQLite / Supabase.
+  /// Sinkronisasi profil user terkini dari Supabase (termasuk saldo & whatsapp) atau SQLite.
   Future<void> refreshProfile() async {
     final currentUser = state.user;
     if (currentUser == null) return;
     try {
-      final user = await AuthService.getUserById(currentUser.id);
+      final user = await MarketplaceRepository.getUserProfile(currentUser.id) ??
+          await AuthService.getUserById(currentUser.id);
       if (user != null) {
         state = state.copyWith(user: user);
       }
     } catch (_) {}
+  }
+
+  /// Memperbarui atau menghapus nomor WhatsApp pengguna
+  Future<String?> updateWhatsapp(String? phoneNumber) async {
+    final currentUser = state.user;
+    if (currentUser == null) return null;
+
+    final normalized = await OrderRepository.setMyWhatsapp(
+      userId: currentUser.id,
+      phoneNumber: phoneNumber,
+    );
+
+    final updated = currentUser.copyWith(
+      whatsappNumber: normalized,
+      resetWhatsappNumber: normalized == null,
+    );
+    state = state.copyWith(user: updated);
+    return normalized;
   }
 
   void clearError() {

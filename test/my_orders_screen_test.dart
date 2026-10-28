@@ -131,7 +131,7 @@ void main() {
     testWidgets(
       'MyOrdersScreen builds on 320dp with fontScale 1.3 without layout exception',
       (tester) async {
-        tester.view.physicalSize = const Size(320 * 2, 700 * 2);
+        tester.view.physicalSize = const Size(320 * 2, 1100 * 2);
         tester.view.devicePixelRatio = 2.0;
         addTearDown(() {
           tester.view.resetPhysicalSize();
@@ -172,7 +172,7 @@ void main() {
               theme: AppTheme.darkTheme,
               home: MediaQuery(
                 data: const MediaQueryData(
-                  size: Size(320, 700),
+                  size: Size(320, 1100),
                   textScaler: TextScaler.linear(1.3),
                 ),
                 child: const MyOrdersScreen(),
@@ -191,9 +191,11 @@ void main() {
         // Periksa render kartu pesanan di tab Pembelian
         expect(find.text('Charizard V'), findsWidgets);
         expect(find.text('Dipesan'), findsWidgets);
-        expect(find.text('Selesai'), findsOneWidget);
         expect(find.text('Sudah Kuterima'), findsOneWidget);
         expect(find.text('Batalkan'), findsOneWidget);
+
+        // Periksa status Selesai pada pesanan kedua
+        expect(find.text('Selesai'), findsOneWidget);
 
         expect(errorDetails, isNull);
         expect(tester.takeException(), isNull);
@@ -266,6 +268,64 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Belum ada pesanan pembelian'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('MyOrdersScreen klik Batalkan membuka _CancelOrderDialog dan ditutup tanpa exception', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith(
+              (ref) => FakeAuthNotifier(
+                const AuthState(
+                  status: AuthStatus.authenticated,
+                  user: testUser,
+                ),
+              ),
+            ),
+            orderProvider.overrideWith(
+              (ref) => FakeOrderNotifier(
+                ref,
+                OrderState(
+                  orders: [buyerOrderReserved],
+                ),
+              ),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: const MyOrdersScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Cari tombol Batalkan
+      final cancelButton = find.widgetWithText(OutlinedButton, 'Batalkan');
+      expect(cancelButton, findsOneWidget);
+
+      // Klik tombol Batalkan
+      await tester.tap(cancelButton);
+      await tester.pumpAndSettle();
+
+      // Verifikasi dialog pembatalan muncul
+      expect(find.text('Batalkan Pesanan?'), findsOneWidget);
+      expect(find.text('Ya, Batalkan'), findsOneWidget);
+      expect(find.text('Kembali'), findsOneWidget);
+
+      // Masukkan teks alasan pembatalan
+      final textField = find.byType(TextField);
+      expect(textField, findsOneWidget);
+      await tester.enterText(textField, 'Jadwal COD bentrok');
+      await tester.pumpAndSettle();
+
+      // Klik tombol Kembali untuk menutup dialog dengan aman
+      await tester.tap(find.text('Kembali'));
+      await tester.pumpAndSettle();
+
+      // Dialog harus tertutup dan tidak ada assertion error _dependents.isEmpty
+      expect(find.text('Batalkan Pesanan?'), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });

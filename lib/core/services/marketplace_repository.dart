@@ -114,8 +114,9 @@ class MarketplaceRepository {
       final Map<String, dynamic> result =
           Map<String, dynamic>.from(response as Map);
 
-      if (result['success'] == true && result['listing_id'] != null) {
-        return result['listing_id'] as String;
+      if (result['success'] == true &&
+          (result['listing_id'] != null || result['id'] != null)) {
+        return (result['listing_id'] ?? result['id']) as String;
       } else {
         throw MarketplaceFailure(
             result['error'] as String? ?? 'Gagal membuat listing kartu.');
