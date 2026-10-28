@@ -127,6 +127,6 @@ void main() {
     expect(find.text('Estimasi Nilai Koleksi'), findsOneWidget);
     expect(find.text('1 Kartu Fisik'), findsOneWidget);
     expect(find.text('Charizard V'), findsOneWidget);
-    expect(find.text('Pasar'), findsOneWidget);
+    expect(find.text('Marketplace'), findsOneWidget);
   });
 }

@@ -16,6 +16,7 @@ import '../../../core/services/web3_blockchain_service.dart';
 import '../../../core/utils/env_loader.dart';
 import '../../../core/utils/price_formatter.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../dex/providers/provenance_provider.dart';
 import '../../profile/providers/collection_provider.dart';
 import 'marketplace_provider.dart';
 
@@ -310,7 +311,23 @@ class OrderNotifier extends StateNotifier<OrderState> {
         );
 
         await BlockchainRepository.saveCertificateRecord(cert);
+
+        // Update tx_hash & token_id pada tabel transactions dan collections
+        await BlockchainRepository.updateTransactionAndCollection(
+          transactionId: txId,
+          userId: buyerId,
+          cardId: resolvedCardId,
+          txHash: onChainTxHash,
+          tokenId: tokenId,
+          contractAddress: cert.contractAddress,
+        );
       }
+    }
+
+    // Refresh riwayat transaksi & silsilah provenance kartu
+    ref.invalidate(userTransactionsProvider(buyerId));
+    if (resolvedCardId != null && resolvedCardId.isNotEmpty) {
+      ref.invalidate(cardProvenanceProvider(resolvedCardId));
     }
 
     // Refresh pesanan & marketplace

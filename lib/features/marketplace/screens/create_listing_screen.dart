@@ -222,7 +222,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Listing kartu berhasil dipasang di Pasar!'),
+            content: Text('Listing kartu berhasil dipasang di Marketplace!'),
             backgroundColor: AppColors.snackBarSuccess,
             behavior: SnackBarBehavior.floating,
           ),
@@ -641,12 +641,12 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             SizedBox(
               height: 50,
               width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
+              child: FilledButton(
+                style: FilledButton.styleFrom(
                   backgroundColor: AppColors.gold,
-                  foregroundColor: Colors.black,
+                  foregroundColor: AppColors.onGold,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                   ),
                 ),
                 onPressed: _isSubmitting ? null : _submitListing,
@@ -656,11 +656,11 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                         height: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.black,
+                          color: AppColors.onGold,
                         ),
                       )
                     : const Text(
-                        'Pasang Listing ke Pasar',
+                        'Pasang Listing ke Marketplace',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -817,7 +817,7 @@ class _CardPickerSheetState extends ConsumerState<_CardPickerSheet>
                         child: Padding(
                           padding: const EdgeInsets.all(24),
                           child: Text(
-                            'Koleksi Anda masih kosong.\nBeli kartu di pasar atau deklarasikan kartu baru dari tab Katalog Dex.',
+                            'Koleksi Anda masih kosong.\nBeli kartu di Marketplace atau deklarasikan kartu baru dari tab Katalog Dex.',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: AppColors.onSurfaceVariant),
                           ),

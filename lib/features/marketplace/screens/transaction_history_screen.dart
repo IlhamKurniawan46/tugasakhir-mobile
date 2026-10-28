@@ -112,7 +112,7 @@ class _TransactionHistoryScreenState
                 userId: user.id,
                 emptyTitle: 'Belum Ada Pembelian',
                 emptySubtitle:
-                    'Kartu yang Anda beli di Pasar HoloDex akan tercatat di sini dan tersimpan di Koleksi Saya.',
+                    'Kartu yang Anda beli di Marketplace HoloDex akan tercatat di sini dan tersimpan di Koleksi Saya.',
                 isPurchaseTab: true,
               ),
 
@@ -122,7 +122,7 @@ class _TransactionHistoryScreenState
                 userId: user.id,
                 emptyTitle: 'Belum Ada Penjualan',
                 emptySubtitle:
-                    'Pasang listing kartu fisik Anda di pasar untuk mulai menjual ke sesama kolektor.',
+                    'Pasang listing kartu fisik Anda di Marketplace untuk mulai menjual ke sesama kolektor.',
                 isPurchaseTab: false,
               ),
             ],

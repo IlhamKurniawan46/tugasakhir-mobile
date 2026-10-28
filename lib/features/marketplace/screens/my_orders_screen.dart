@@ -7,12 +7,15 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/models/card_certificate_model.dart';
 import '../../../core/models/order_model.dart';
+import '../../../core/services/blockchain_repository.dart';
 import '../../../core/services/currency_service.dart';
 import '../../../core/services/order_repository.dart';
 import '../../../core/utils/price_formatter.dart';
 import '../../../core/utils/whatsapp_helper.dart';
 import '../../../shared/providers/currency_provider.dart';
+import '../../../shared/widgets/blockchain_verification_dialog.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/order_provider.dart';
 
@@ -195,7 +198,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen>
                         orders: orderState.buyerOrders,
                         isBuyerList: true,
                         emptyMessage:
-                            'Belum ada pesanan pembelian.\nPilih kartu yang kamu inginkan di Pasar!',
+                            'Belum ada pesanan pembelian.\nPilih kartu yang kamu inginkan di Marketplace!',
                       ),
                       // Tab 2: Penjualan
                       _OrderListView(
@@ -398,6 +401,39 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
     }
   }
 
+  Future<void> _handleViewCertificate(BuildContext context) async {
+    final cardId = widget.order.cardId;
+    final certificates = await BlockchainRepository.getCardProvenance(cardId);
+
+    CardCertificateModel? matchedCert;
+    for (final cert in certificates.reversed) {
+      if (cert.notes?.contains(widget.order.id) == true) {
+        matchedCert = cert;
+        break;
+      }
+    }
+    matchedCert ??= certificates.isNotEmpty ? certificates.last : null;
+
+    if (!context.mounted) return;
+
+    if (matchedCert != null && matchedCert.txHash.isNotEmpty) {
+      BlockchainVerificationDialog.show(
+        context,
+        txHash: matchedCert.txHash,
+        tokenId: matchedCert.tokenId,
+        cardName: widget.order.card?.name,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sertifikat on-chain belum tersedia untuk pesanan ini.'),
+          backgroundColor: AppColors.surfaceHighest,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   Future<void> _handleConfirmReceipt() async {
     final user = ref.read(authProvider).user;
     if (user == null) return;
@@ -430,10 +466,13 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Batal'),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
+          FilledButton(
+            style: FilledButton.styleFrom(
               backgroundColor: AppColors.gold,
-              foregroundColor: Colors.black,
+              foregroundColor: AppColors.onGold,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+              ),
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Sudah Kuterima'),
@@ -449,7 +488,7 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      await ref.read(orderProvider.notifier).confirmReceipt(
+      final result = await ref.read(orderProvider.notifier).confirmReceipt(
             orderId: widget.order.id,
             buyerId: user.id,
             cardName: widget.order.card?.name,
@@ -458,15 +497,27 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
           );
 
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              'Serah terima berhasil! Kartu ${widget.order.card?.name ?? ''} telah masuk ke Koleksi Saya.',
+        final txHash = result['tx_hash'] as String?;
+        final tokenId = result['token_id'] as String?;
+
+        if (txHash != null && txHash.isNotEmpty) {
+          BlockchainVerificationDialog.show(
+            context,
+            txHash: txHash,
+            tokenId: tokenId,
+            cardName: widget.order.card?.name,
+          );
+        } else {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Serah terima berhasil! Kartu ${widget.order.card?.name ?? ''} telah masuk ke Koleksi Saya.',
+              ),
+              backgroundColor: AppColors.snackBarSuccess,
+              behavior: SnackBarBehavior.floating,
             ),
-            backgroundColor: AppColors.snackBarSuccess,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -823,6 +874,37 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
               ),
             ],
 
+            // Tombol Verifikasi On-Chain (Jika pesanan sudah selesai)
+            if (order.isCompleted) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.cyan,
+                    side: const BorderSide(color: AppColors.cyan, width: 1.2),
+                    minimumSize: const Size(0, 38),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    ),
+                  ),
+                  icon: const Icon(Icons.verified, size: 16, color: AppColors.cyan),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Verifikasi Sertifikat On-Chain (Polygon)',
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ),
+                  onPressed: () => _handleViewCertificate(context),
+                ),
+              ),
+            ],
+
             // Tombol Kontak WhatsApp (Hanya saat status reserved)
             if (order.isReserved) ...[
               const SizedBox(height: 10),
@@ -832,10 +914,9 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF25D366),
                     foregroundColor: Colors.white,
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    minimumSize: const Size(0, 42),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                     ),
                   ),
                   icon: _isContacting
@@ -849,11 +930,18 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
                           ),
                         )
                       : const Icon(Icons.chat_bubble_outline, size: 16),
-                  label: Text(
-                    _isContacting
-                        ? 'Menghubungkan...'
-                        : 'Hubungi via WhatsApp',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      _isContacting
+                          ? 'Menghubungkan...'
+                          : 'Hubungi via WhatsApp',
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                   onPressed: _isContacting ? null : _handleContactWhatsApp,
                 ),
@@ -892,40 +980,58 @@ class _OrderCardItemState extends ConsumerState<OrderCardItem> {
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.error,
-                          side: const BorderSide(color: AppColors.error),
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          side: const BorderSide(color: AppColors.error, width: 1.2),
+                          minimumSize: const Size(0, 42),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                          ),
                         ),
                         onPressed: _isProcessing ? null : _handleCancelOrder,
-                        child: const Text(
-                          'Batalkan',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                        child: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Batalkan',
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   if (canConfirm && canCancel) const SizedBox(width: 8),
                   if (canConfirm)
                     Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
                           backgroundColor: AppColors.gold,
-                          foregroundColor: Colors.black,
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          foregroundColor: AppColors.onGold,
+                          minimumSize: const Size(0, 42),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                          ),
                         ),
                         onPressed: _isProcessing ? null : _handleConfirmReceipt,
                         child: _isProcessing
                             ? const SizedBox(
-                                width: 14,
-                                height: 14,
+                                width: 16,
+                                height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.black,
+                                  color: AppColors.onGold,
                                 ),
                               )
-                            : const Text(
-                                'Sudah Kuterima',
-                                style: TextStyle(fontWeight: FontWeight.w700),
+                            : const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Sudah Kuterima',
+                                  maxLines: 1,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
                               ),
                       ),
                     ),
@@ -1089,7 +1195,7 @@ class _CancelOrderDialogState extends State<_CancelOrderDialog> {
           Text(
             widget.isBuyer
                 ? 'Saldo tertahan sebesar ${PriceFormatter.formatIdr(widget.amountIdr)} akan langsung dikembalikan utuh ke akun Anda, dan listing kartu kembali aktif.'
-                : 'Pesanan akan dibatalkan, saldo akan dikembalikan ke pembeli, dan listing kartu Anda akan kembali aktif di Pasar.',
+                : 'Pesanan akan dibatalkan, saldo akan dikembalikan ke pembeli, dan listing kartu Anda akan kembali aktif di Marketplace.',
             style: const TextStyle(fontSize: 13, color: AppColors.onSurface),
           ),
           const SizedBox(height: 12),
@@ -1107,10 +1213,13 @@ class _CancelOrderDialogState extends State<_CancelOrderDialog> {
           onPressed: () => Navigator.pop(context, null),
           child: const Text('Kembali'),
         ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
+        FilledButton(
+          style: FilledButton.styleFrom(
             backgroundColor: AppColors.error,
             foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            ),
           ),
           onPressed: () {
             Navigator.pop(context, _reasonController.text.trim());

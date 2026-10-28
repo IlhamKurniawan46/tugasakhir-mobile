@@ -294,29 +294,13 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            const Icon(Icons.storefront, color: AppColors.gold, size: 24),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                'Pasar HoloDex',
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.gold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.receipt_long),
-            tooltip: 'Riwayat Transaksi',
-            onPressed: () => context.push('/marketplace/history'),
+        title: Text(
+          'Marketplace HoloDex',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.gold,
           ),
-        ],
+        ),
       ),
       floatingActionButton: _selectedSegment == 0
           ? FloatingActionButton.extended(
@@ -477,7 +461,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                                 child: FittedBox(
                                   fit: BoxFit.scaleDown,
                                   child: Text(
-                                    'Listing Pasar',
+                                    'Listing Marketplace',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 13,
@@ -704,7 +688,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                           marketplaceState.searchQuery.isNotEmpty ||
                                   marketplaceState.selectedCondition != 'all'
                               ? 'Tidak ada kartu yang cocok dengan saringan saat ini. Coba reset filter.'
-                              : 'Jadilah yang pertama memasang listing kartu fisik di Pasar HoloDex!',
+                              : 'Jadilah yang pertama memasang listing kartu fisik di Marketplace HoloDex!',
                           textAlign: TextAlign.center,
                           style: textTheme.bodySmall?.copyWith(
                             color: AppColors.onSurfaceVariant,
@@ -903,7 +887,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                   const SizedBox(height: 12),
                   Text(
                     isBuyerSubTab
-                        ? 'Belum ada pesanan pembelian aktif.\nPilih kartu yang kamu minati di Listing Pasar!'
+                        ? 'Belum ada pesanan pembelian aktif.\nPilih kartu yang kamu minati di Listing Marketplace!'
                         : 'Belum ada pesanan penjualan aktif.\nPasang listing menarik untuk kolektor lain!',
                     textAlign: TextAlign.center,
                     style: textTheme.bodyMedium?.copyWith(

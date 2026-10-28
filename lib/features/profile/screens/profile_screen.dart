@@ -269,7 +269,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: const Text('Reset Profil Minat?'),
         content: const Text(
           'Seluruh riwayat interaksi dan preferensi rekomendasi di perangkat ini akan dihapus. '
-          'Rekomendasi di beranda dan pasar akan kembali ke setelan awal.',
+          'Rekomendasi di beranda dan Marketplace akan kembali ke setelan awal.',
         ),
         actions: [
           TextButton(
@@ -349,14 +349,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profil Kolektor'),
-        actions: [
-          IconButton(
-            tooltip: 'Keluar',
-            icon: const Icon(Icons.logout, color: AppColors.error),
-            onPressed: _confirmLogout,
+        title: const Text(
+          'Profil',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: AppColors.gold,
           ),
-        ],
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -1029,7 +1028,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Sistem belajar otomatis dari aktivitasmu! Cukup cari Pokémon favorit, klik detail kartu, tambahkan ke watchlist, atau beli di pasar.',
+                          'Sistem belajar otomatis dari aktivitasmu! Cukup cari Pokémon favorit, klik detail kartu, tambahkan ke watchlist, atau beli di Marketplace.',
                           style: textTheme.bodySmall?.copyWith(
                             color: AppColors.onSurfaceVariant,
                             fontSize: 11,

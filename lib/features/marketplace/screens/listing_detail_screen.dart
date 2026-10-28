@@ -311,21 +311,48 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                          ),
+                        ),
                         onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('Batal'),
+                        child: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Batal',
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13.5,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
                           backgroundColor: AppColors.gold,
-                          foregroundColor: Colors.black,
+                          foregroundColor: AppColors.onGold,
+                          minimumSize: const Size(0, 48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                          ),
                         ),
                         onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text(
-                          'Pesan Sekarang',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                        child: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Pesan Sekarang',
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13.5,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -404,11 +431,13 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 },
                 child: const Text('Tutup'),
               ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
+              FilledButton(
+                style: FilledButton.styleFrom(
                   backgroundColor: AppColors.gold,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  foregroundColor: AppColors.onGold,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                  ),
                 ),
                 onPressed: () {
                   Navigator.pop(ctx);
@@ -445,17 +474,20 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         backgroundColor: AppColors.surface,
         title: const Text('Batalkan Listing?'),
         content: const Text(
-          'Kartu ini akan ditarik dari Pasar dan tidak dapat dibeli oleh pengguna lain lagi.',
+          'Kartu ini akan ditarik dari Marketplace dan tidak dapat dibeli oleh pengguna lain lagi.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Batal'),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
+          FilledButton(
+            style: FilledButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+              ),
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Ya, Batalkan'),
@@ -649,15 +681,14 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       flex: 5,
                       child: SizedBox(
                         height: 48,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
                             backgroundColor:
                                 canBuy ? AppColors.gold : AppColors.surfaceHigh,
                             foregroundColor:
-                                canBuy ? Colors.black : AppColors.onSurfaceVariant,
-                            elevation: canBuy ? 3 : 0,
+                                canBuy ? AppColors.onGold : AppColors.onSurfaceVariant,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                             ),
                           ),
                           onPressed: (_isPurchasing || !listing.isActive || listing.isReserved)
@@ -668,7 +699,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                                           .showSnackBar(
                                         const SnackBar(
                                           content: Text(
-                                              'Saldo tidak cukup. Silakan top up di menu pasar.'),
+                                              'Saldo tidak cukup. Silakan top up di menu Marketplace.'),
                                           backgroundColor: AppColors.snackBarError,
                                           behavior: SnackBarBehavior.floating,
                                         ),
@@ -681,7 +712,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                                   height: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Colors.black,
+                                    color: AppColors.onGold,
                                   ),
                                 )
                               : Text(

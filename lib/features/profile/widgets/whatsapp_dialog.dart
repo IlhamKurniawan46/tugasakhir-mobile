@@ -209,6 +209,10 @@ class _WhatsAppDialogState extends ConsumerState<WhatsAppDialog> {
           style: FilledButton.styleFrom(
             backgroundColor: const Color(0xFF25D366),
             foregroundColor: Colors.white,
+            minimumSize: const Size(0, 42),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            ),
           ),
           child: _isLoading
               ? const SizedBox(

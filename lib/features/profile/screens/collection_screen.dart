@@ -384,7 +384,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                                   Icon(Icons.verified, size: 10, color: AppColors.cyan),
                                   SizedBox(width: 3),
                                   Text(
-                                    'Pasar',
+                                    'Marketplace',
                                     style: TextStyle(
                                       fontSize: 9,
                                       fontWeight: FontWeight.w700,
@@ -511,7 +511,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
             ),
             icon: const Icon(Icons.storefront),
             label: const Text(
-              'Jelajahi Pasar (Marketplace)',
+              'Jelajahi Marketplace',
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
             onPressed: () => context.go('/marketplace'),

@@ -224,18 +224,32 @@ class Web3BlockchainService {
 
     try {
       final function = deployed.function('mintCard');
+      // Estimasi gas dinamis atau gunakan batas aman 600.000 gas
+      // (Eksekusi mintCard butuh ~370.000 gas karena multiple SSTORE & provenance array)
+      int gasLimit = 600000;
+      try {
+        final estimated = await client.estimateGas(
+          sender: creds.address,
+          to: deployed.address,
+          data: function.encodeCall([targetRecipient, cardId, uri]),
+        );
+        gasLimit = (estimated.toInt() * 1.25).ceil();
+      } catch (_) {
+        gasLimit = 600000;
+      }
+
       final txHash = await client.sendTransaction(
         creds,
         Transaction.callContract(
           contract: deployed,
           function: function,
           parameters: [targetRecipient, cardId, uri],
-          maxGas: 300000,
+          maxGas: gasLimit,
         ),
         chainId: EnvLoader.polygonChainId,
       );
 
-      debugPrint('[HoloDex Web3] Minting sukses, TxHash: $txHash');
+      debugPrint('[HoloDex Web3] Minting sukses, TxHash: $txHash (gasLimit: $gasLimit)');
       return txHash;
     } catch (e) {
       debugPrint('[HoloDex Error] Gagal minting sertifikat on-chain: $e');
@@ -271,19 +285,33 @@ class Web3BlockchainService {
 
     try {
       final function = deployed.function('recordTransfer');
+      final params = [
+        EthereumAddress.fromHex(fromAddress),
+        EthereumAddress.fromHex(toAddress),
+        tokenId,
+        BigInt.from(priceIdr.toInt()),
+        notes,
+      ];
+
+      int gasLimit = 600000;
+      try {
+        final estimated = await client.estimateGas(
+          sender: creds.address,
+          to: deployed.address,
+          data: function.encodeCall(params),
+        );
+        gasLimit = (estimated.toInt() * 1.25).ceil();
+      } catch (_) {
+        gasLimit = 600000;
+      }
+
       final txHash = await client.sendTransaction(
         creds,
         Transaction.callContract(
           contract: deployed,
           function: function,
-          parameters: [
-            EthereumAddress.fromHex(fromAddress),
-            EthereumAddress.fromHex(toAddress),
-            tokenId,
-            BigInt.from(priceIdr.toInt()),
-            notes,
-          ],
-          maxGas: 350000,
+          parameters: params,
+          maxGas: gasLimit,
         ),
         chainId: EnvLoader.polygonChainId,
       );

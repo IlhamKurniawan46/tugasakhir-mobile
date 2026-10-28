@@ -557,7 +557,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Kartu ini ada di Koleksi (Diperoleh dari Pasar)',
+                    'Kartu ini ada di Koleksi (Diperoleh dari Marketplace)',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,

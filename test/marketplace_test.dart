@@ -217,7 +217,7 @@ void main() {
       await tester.pump();
       FlutterError.onError = oldHandler;
 
-      expect(find.text('Pasar HoloDex'), findsOneWidget);
+      expect(find.text('Marketplace HoloDex'), findsOneWidget);
       expect(find.text('Charizard V'), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
       expect(errorDetails, isNull);

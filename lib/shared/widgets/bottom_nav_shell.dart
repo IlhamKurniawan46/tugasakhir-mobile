@@ -101,7 +101,7 @@ class BottomNavShell extends ConsumerWidget {
             NavigationDestination(
               icon: Icon(Icons.storefront_outlined),
               selectedIcon: Icon(Icons.storefront),
-              label: 'Pasar',
+              label: 'Marketplace',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline),

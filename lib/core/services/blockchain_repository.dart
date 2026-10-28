@@ -85,6 +85,71 @@ class BlockchainRepository {
     }
   }
 
+  /// Memperbarui catatan transaksi dan koleksi dengan bukti on-chain (tx_hash, token_id)
+  static Future<void> updateTransactionAndCollection({
+    required String transactionId,
+    required String userId,
+    required String cardId,
+    required String txHash,
+    required String tokenId,
+    required String contractAddress,
+  }) async {
+    // 1. Update ke SQLite lokal
+    try {
+      final db = await LocalDb.instance;
+      if (transactionId.isNotEmpty) {
+        await db.update(
+          'transactions',
+          {
+            'tx_hash': txHash,
+            'token_id': tokenId,
+            'contract_address': contractAddress,
+            'blockchain_status': 'confirmed',
+          },
+          where: 'id = ?',
+          whereArgs: [transactionId],
+        );
+      }
+      if (userId.isNotEmpty && cardId.isNotEmpty) {
+        await db.update(
+          'collections',
+          {
+            'tx_hash': txHash,
+            'token_id': tokenId,
+            'contract_address': contractAddress,
+          },
+          where: 'user_id = ? AND card_id = ?',
+          whereArgs: [userId, cardId],
+        );
+      }
+    } catch (e) {
+      debugPrint('[HoloDex Error] updateTransactionAndCollection SQLite: $e');
+    }
+
+    // 2. Update ke Supabase online jika terhubung
+    if (SupabaseService.isInitialized) {
+      try {
+        if (transactionId.isNotEmpty) {
+          await _client.from('transactions').update({
+            'tx_hash': txHash,
+            'token_id': tokenId,
+            'contract_address': contractAddress,
+            'blockchain_status': 'confirmed',
+          }).eq('id', transactionId);
+        }
+        if (userId.isNotEmpty && cardId.isNotEmpty) {
+          await _client.from('collections').update({
+            'tx_hash': txHash,
+            'token_id': tokenId,
+            'contract_address': contractAddress,
+          }).match({'user_id': userId, 'card_id': cardId});
+        }
+      } catch (e) {
+        debugPrint('[HoloDex Error] updateTransactionAndCollection Supabase: $e');
+      }
+    }
+  }
+
   /// Cache kumpulan sertifikat ke SQLite lokal
   static Future<void> _cacheCertificatesLocally(List<CardCertificateModel> items) async {
     if (items.isEmpty) return;

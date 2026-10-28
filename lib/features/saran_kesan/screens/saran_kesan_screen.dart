@@ -31,7 +31,13 @@ class SaranKesanScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Saran & Kesan'),
+        title: const Text(
+          'Saran & Kesan',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: AppColors.gold,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
